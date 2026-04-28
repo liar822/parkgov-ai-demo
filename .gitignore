@@ -1,0 +1,27 @@
+node_modules/
+dist/
+.vite/
+.env
+.env.*
+!.env.example
+!.env.production.example
+uploads/
+logs/
+*.log
+__pycache__/
+*.pyc
+
+# Local AI/runtime artifacts
+ai-services/.venv/
+ai-services/training_runs/
+datasets/raw/
+datasets/samples/
+*.pt
+*.pth
+*.onnx
+*.zip
+
+# OS/editor files
+.DS_Store
+.idea/
+.vscode/

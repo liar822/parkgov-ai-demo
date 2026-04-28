@@ -1,0 +1,20 @@
+{
+  "camera_external_id": "CAMERA_CAMPUS_DEMO_001",
+  "parking_lot_source_id": "BJU_CAMPUS_DEMO_001",
+  "model_name": "yolov8_parking_slot_demo",
+  "input_path": "sample://campus/east-gate-demo.mp4#frame=120",
+  "inference_timestamp": "2026-04-26T14:20:00+08:00",
+  "notes": "演示 AI 识别结果：仅用于验证 JSON -> 车位状态更新链路，不代表真实视频推理。",
+  "detections": [
+    { "slot_number": 1, "is_occupied": true, "confidence": 0.94, "predicted_vacancy_seconds": 1800 },
+    { "slot_number": 2, "is_occupied": true, "confidence": 0.91, "predicted_vacancy_seconds": 2400 },
+    { "slot_number": 3, "is_occupied": false, "confidence": 0.88, "predicted_vacancy_seconds": 0 },
+    { "slot_number": 4, "is_occupied": false, "confidence": 0.86, "predicted_vacancy_seconds": 0 },
+    { "slot_number": 5, "is_occupied": true, "confidence": 0.9, "predicted_vacancy_seconds": 1200 },
+    { "slot_number": 6, "is_occupied": true, "confidence": 0.93, "predicted_vacancy_seconds": 1500 },
+    { "slot_number": 7, "is_occupied": false, "confidence": 0.89, "predicted_vacancy_seconds": 0 },
+    { "slot_number": 8, "is_occupied": true, "confidence": 0.92, "predicted_vacancy_seconds": 2100 },
+    { "slot_number": 9, "is_occupied": false, "confidence": 0.87, "predicted_vacancy_seconds": 0 },
+    { "slot_number": 10, "is_occupied": true, "confidence": 0.95, "predicted_vacancy_seconds": 2700 }
+  ]
+}

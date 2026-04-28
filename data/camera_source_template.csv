@@ -1,0 +1,2 @@
+camera_id,parking_lot_id,camera_name,source_type,source_url_or_path,frame_interval_seconds,notes
+CAM_DEMO_001,BJD_DEMO_001,示例摄像头1,image_or_video,./sample_inputs/demo_parking.jpg,5,可替换为校园停车场图片/视频/RTSP地址

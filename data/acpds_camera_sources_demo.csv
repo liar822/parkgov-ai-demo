@@ -1,0 +1,2 @@
+camera_id,parking_lot_source_id,parking_lot_name,camera_name,source_kind,source_url,coverage_description,status,last_seen_at,ai_pipeline,notes
+CAMERA_ACPDS_DEMO_001,ACPDS_PUBLIC_DATASET_DEMO_001,ACPDS公开数据集验证停车场,ACPDS测试图样例源,image,datasets/raw/acpds/rois_gopro.zip#images/GOPR6536.JPG,公开数据集测试图 GOPR6536.JPG 的 98 个标注 ROI,sample,2026-04-27T11:00:00+08:00,acpds_slot_cnn_first_round,公开数据集样例源：用于验证模型推理和后端写回，不代表真实摄像头接入

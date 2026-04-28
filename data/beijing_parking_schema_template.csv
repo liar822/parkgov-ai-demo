@@ -1,0 +1,3 @@
+parking_lot_id,name,district,address,latitude,longitude,total_spaces,available_spaces,fee_rule,source_type,updated_at,notes
+BJD_DEMO_001,示例停车场A,海淀区,示例地址A,,,,,,demo,,此文件是字段模板，不是真实数据
+BJD_DEMO_002,示例停车场B,朝阳区,示例地址B,,,,,,demo,,请用北京公共数据或校园调研数据替换

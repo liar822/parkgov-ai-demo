@@ -1,0 +1,19 @@
+{
+  "name": "ACPDS public dataset model inference demo",
+  "mode": "image",
+  "parking_lot_source_id": "ACPDS_PUBLIC_DATASET_DEMO_001",
+  "parking_lot_name": "ACPDS公开数据集验证停车场",
+  "camera_external_id": "CAMERA_ACPDS_DEMO_001",
+  "input_path": "datasets/raw/acpds/rois_gopro.zip#images/GOPR6536.JPG",
+  "checkpoint_path": "external_repos/primary_ai_parking_system/ai-services/training_runs/acpds_first_round/acpds_slot_cnn_best.pt",
+  "model_name": "acpds_slot_cnn_first_round_auto_infer",
+  "roi_source": "database",
+  "roi_version": "demo_v1",
+  "threshold": 0.5,
+  "image_size": 96,
+  "padding": 0.12,
+  "device": "cpu",
+  "sample_every_frames": 30,
+  "max_frames": 8,
+  "notes": "公开数据集样例自动推理；用于验证模型到平台写回链路，不代表真实北京或校园摄像头接入。"
+}

@@ -1,0 +1,5 @@
+camera_id,parking_lot_source_id,parking_lot_name,camera_name,source_kind,source_url,coverage_description,status,last_seen_at,ai_pipeline,notes
+CAMERA_CAMPUS_DEMO_001,BJU_CAMPUS_DEMO_001,北京高校校园东门试点停车场,东门入口样例视频源,video_file,sample://campus/east-gate-demo.mp4,覆盖入口及前排 1-30 号车位,sample,2026-04-26T13:30:00+08:00,yolov8_parking_slot_demo,演示视频源：用于验证管理端数据结构，不代表真实摄像头接入
+CAMERA_CAMPUS_DEMO_002,BJU_CAMPUS_DEMO_001,北京高校校园东门试点停车场,东门内侧图片采样点,image,sample://campus/east-gate-frame.jpg,覆盖中排 31-60 号车位,planned,,image_slot_detection_demo,演示图片源：后续可替换为校园试点采样图片
+CAMERA_CAMPUS_DEMO_003,BJU_CAMPUS_DEMO_002,北京高校家属区临时停车区,家属区南侧占位 RTSP 源,rtsp,rtsp://demo.local/campus-family-area,覆盖家属区入口与临停区域,planned,,yolov8_parking_slot_demo,占位 RTSP：仅用于接口字段验证，不代表真实网络可访问
+CAMERA_OPEN_DATA_DEMO_001,BJU_OPEN_DATA_DEMO_001,北京公共停车开放数据占位示例,开放数据占位巡查源,manual_demo,sample://beijing-open-data/placeholder,无真实视频流，仅标注未来可接入巡查或诱导数据,sample,2026-04-26T13:45:00+08:00,manual_open_data_placeholder,演示数据：用于说明公共停车数据层与视觉来源可分离

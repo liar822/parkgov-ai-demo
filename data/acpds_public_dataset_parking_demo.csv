@@ -1,0 +1,2 @@
+parking_lot_id,name,district,address,latitude,longitude,total_spaces,available_spaces,fee_rule,source_type,updated_at,notes
+ACPDS_PUBLIC_DATASET_DEMO_001,ACPDS公开数据集验证停车场,公开数据集,Action-Camera Parking Dataset / GOPR6536.JPG,,,98,66,无收费：公开数据集模型验证,ai_dataset_demo,2026-04-27T11:00:00+08:00,公开数据集测试样本：用于验证训练模型到平台写回链路，不代表北京或校园真实停车场

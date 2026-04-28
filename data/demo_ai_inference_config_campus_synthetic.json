@@ -1,0 +1,19 @@
+{
+  "name": "Synthetic campus east-gate ROI inference demo",
+  "mode": "image",
+  "parking_lot_source_id": "BJU_CAMPUS_DEMO_001",
+  "parking_lot_name": "北京高校校园东门试点停车场",
+  "camera_external_id": "CAMERA_CAMPUS_DEMO_001",
+  "input_path": "datasets/samples/campus/east-gate-synthetic-frame.png",
+  "checkpoint_path": "external_repos/primary_ai_parking_system/ai-services/training_runs/cnrpark_ext_30k_epoch3/cnrpark_ext_slot_cnn_best.pt",
+  "model_name": "campus_synthetic_cnrpark_ext_30k_epoch3",
+  "roi_source": "database",
+  "roi_version": "demo_v1",
+  "threshold": 0.5,
+  "image_size": 96,
+  "padding": 0.12,
+  "device": "cpu",
+  "sample_every_frames": 30,
+  "max_frames": 8,
+  "notes": "合成校园东门样例图：用于验证校园 ROI 到平台写回链路，不是真实校园摄像头画面，不代表真实部署。"
+}

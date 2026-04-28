@@ -1,0 +1,598 @@
+{
+  "camera_external_id": "CAMERA_ACPDS_DEMO_001",
+  "parking_lot_source_id": "ACPDS_PUBLIC_DATASET_DEMO_001",
+  "model_name": "acpds_slot_cnn_first_round",
+  "input_path": "/Users/liguangcheng/Documents/New project 2/datasets/raw/acpds/rois_gopro.zip#images/GOPR6536.JPG",
+  "inference_timestamp": "2026-04-27T10:57:55",
+  "notes": "ACPDS公开数据集测试图模型推理结果；仅用于验证训练模型到平台写回链路，不代表北京或校园真实摄像头接入。",
+  "detections": [
+    {
+      "slot_number": 1,
+      "is_occupied": true,
+      "confidence": 0.9878,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 2,
+      "is_occupied": false,
+      "confidence": 0.994,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 3,
+      "is_occupied": false,
+      "confidence": 0.9933,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 4,
+      "is_occupied": false,
+      "confidence": 0.9952,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 5,
+      "is_occupied": false,
+      "confidence": 0.9941,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 6,
+      "is_occupied": false,
+      "confidence": 0.9789,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 7,
+      "is_occupied": true,
+      "confidence": 0.7336,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 8,
+      "is_occupied": true,
+      "confidence": 0.9631,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 9,
+      "is_occupied": true,
+      "confidence": 0.9541,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 10,
+      "is_occupied": false,
+      "confidence": 0.9755,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 11,
+      "is_occupied": false,
+      "confidence": 0.9918,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 12,
+      "is_occupied": false,
+      "confidence": 0.9969,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 13,
+      "is_occupied": false,
+      "confidence": 0.9973,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 14,
+      "is_occupied": false,
+      "confidence": 0.9645,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 15,
+      "is_occupied": true,
+      "confidence": 0.9832,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 16,
+      "is_occupied": false,
+      "confidence": 0.9867,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 17,
+      "is_occupied": true,
+      "confidence": 0.9989,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 18,
+      "is_occupied": false,
+      "confidence": 0.974,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 19,
+      "is_occupied": true,
+      "confidence": 0.9905,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 20,
+      "is_occupied": false,
+      "confidence": 0.9542,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 21,
+      "is_occupied": false,
+      "confidence": 0.9888,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 22,
+      "is_occupied": false,
+      "confidence": 0.8178,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 23,
+      "is_occupied": true,
+      "confidence": 0.9402,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 24,
+      "is_occupied": true,
+      "confidence": 0.9665,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 25,
+      "is_occupied": false,
+      "confidence": 0.5049,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 26,
+      "is_occupied": false,
+      "confidence": 0.9731,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 27,
+      "is_occupied": true,
+      "confidence": 0.8582,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 28,
+      "is_occupied": true,
+      "confidence": 0.9033,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 29,
+      "is_occupied": false,
+      "confidence": 0.9876,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 30,
+      "is_occupied": false,
+      "confidence": 0.9339,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 31,
+      "is_occupied": true,
+      "confidence": 0.9418,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 32,
+      "is_occupied": false,
+      "confidence": 0.9507,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 33,
+      "is_occupied": false,
+      "confidence": 0.9954,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 34,
+      "is_occupied": false,
+      "confidence": 0.8571,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 35,
+      "is_occupied": false,
+      "confidence": 0.9958,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 36,
+      "is_occupied": false,
+      "confidence": 0.9733,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 37,
+      "is_occupied": true,
+      "confidence": 0.9368,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 38,
+      "is_occupied": false,
+      "confidence": 0.9767,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 39,
+      "is_occupied": false,
+      "confidence": 0.9982,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 40,
+      "is_occupied": false,
+      "confidence": 0.9982,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 41,
+      "is_occupied": false,
+      "confidence": 0.9973,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 42,
+      "is_occupied": false,
+      "confidence": 0.9945,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 43,
+      "is_occupied": false,
+      "confidence": 0.9979,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 44,
+      "is_occupied": false,
+      "confidence": 0.9902,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 45,
+      "is_occupied": false,
+      "confidence": 0.9297,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 46,
+      "is_occupied": false,
+      "confidence": 0.9379,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 47,
+      "is_occupied": true,
+      "confidence": 0.8079,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 48,
+      "is_occupied": true,
+      "confidence": 0.7819,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 49,
+      "is_occupied": true,
+      "confidence": 0.7249,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 50,
+      "is_occupied": false,
+      "confidence": 0.985,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 51,
+      "is_occupied": false,
+      "confidence": 0.9981,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 52,
+      "is_occupied": false,
+      "confidence": 0.9985,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 53,
+      "is_occupied": false,
+      "confidence": 0.9982,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 54,
+      "is_occupied": false,
+      "confidence": 0.9982,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 55,
+      "is_occupied": false,
+      "confidence": 0.9977,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 56,
+      "is_occupied": false,
+      "confidence": 0.9965,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 57,
+      "is_occupied": false,
+      "confidence": 0.9959,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 58,
+      "is_occupied": false,
+      "confidence": 0.9974,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 59,
+      "is_occupied": false,
+      "confidence": 0.9978,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 60,
+      "is_occupied": false,
+      "confidence": 0.9896,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 61,
+      "is_occupied": false,
+      "confidence": 0.9962,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 62,
+      "is_occupied": true,
+      "confidence": 0.9704,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 63,
+      "is_occupied": false,
+      "confidence": 0.9946,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 64,
+      "is_occupied": false,
+      "confidence": 0.9751,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 65,
+      "is_occupied": false,
+      "confidence": 0.9899,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 66,
+      "is_occupied": true,
+      "confidence": 0.9719,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 67,
+      "is_occupied": false,
+      "confidence": 0.93,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 68,
+      "is_occupied": true,
+      "confidence": 0.9804,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 69,
+      "is_occupied": false,
+      "confidence": 0.6942,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 70,
+      "is_occupied": true,
+      "confidence": 0.6928,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 71,
+      "is_occupied": true,
+      "confidence": 0.9018,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 72,
+      "is_occupied": true,
+      "confidence": 0.922,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 73,
+      "is_occupied": true,
+      "confidence": 0.9283,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 74,
+      "is_occupied": true,
+      "confidence": 0.9578,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 75,
+      "is_occupied": true,
+      "confidence": 0.9324,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 76,
+      "is_occupied": true,
+      "confidence": 0.9617,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 77,
+      "is_occupied": true,
+      "confidence": 0.8995,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 78,
+      "is_occupied": true,
+      "confidence": 0.8291,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 79,
+      "is_occupied": true,
+      "confidence": 0.8736,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 80,
+      "is_occupied": true,
+      "confidence": 0.6516,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 81,
+      "is_occupied": true,
+      "confidence": 0.6731,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 82,
+      "is_occupied": true,
+      "confidence": 0.5938,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 83,
+      "is_occupied": true,
+      "confidence": 0.7925,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 84,
+      "is_occupied": true,
+      "confidence": 0.934,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 85,
+      "is_occupied": true,
+      "confidence": 0.8162,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 86,
+      "is_occupied": true,
+      "confidence": 0.8249,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 87,
+      "is_occupied": true,
+      "confidence": 0.9503,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 88,
+      "is_occupied": false,
+      "confidence": 0.7239,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 89,
+      "is_occupied": false,
+      "confidence": 0.9554,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 90,
+      "is_occupied": false,
+      "confidence": 0.9974,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 91,
+      "is_occupied": true,
+      "confidence": 0.7829,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 92,
+      "is_occupied": false,
+      "confidence": 0.9946,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 93,
+      "is_occupied": true,
+      "confidence": 0.9748,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 94,
+      "is_occupied": false,
+      "confidence": 0.9953,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 95,
+      "is_occupied": false,
+      "confidence": 0.9959,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 96,
+      "is_occupied": false,
+      "confidence": 0.9971,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 97,
+      "is_occupied": false,
+      "confidence": 0.9986,
+      "predicted_vacancy_seconds": 0
+    },
+    {
+      "slot_number": 98,
+      "is_occupied": true,
+      "confidence": 0.5924,
+      "predicted_vacancy_seconds": 0
+    }
+  ]
+}
