@@ -113,7 +113,15 @@ export const authService = {
     }
     
     try {
-      const response = await api.get('/admin/configuration');
+      // Token validation runs during public page startup. Use a bare axios
+      // request so an expired admin demo token cannot redirect visitors away
+      // from the public parking service page through the global interceptor.
+      const response = await axios.get(`${api.defaults.baseURL}/admin/configuration`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        timeout: 10000
+      });
       return { data: { valid: true, user: response.data } };
     } catch (error) {
       return { data: { valid: false } };
