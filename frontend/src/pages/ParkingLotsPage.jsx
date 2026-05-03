@@ -106,7 +106,10 @@ const sortOptions = [
   }
 ];
 
-const getMetadata = (lot) => lot?.slot_configuration?.metadata || {};
+const getMetadata = (lot) => ({
+  ...(lot?.slot_configuration?.metadata || {}),
+  ...(lot?.metadata || {})
+});
 
 const toNumber = (value) => {
   if (value === null || value === undefined || value === '') {
@@ -790,10 +793,22 @@ const getAiSignal = (lot) => {
 const enrichLot = (lot, recommendationMap = new Map()) => {
   const metadata = getMetadata(lot);
   const stats = getStats(lot);
-  const latitude = toNumber(metadata.latitude);
-  const longitude = toNumber(metadata.longitude);
+  const recommendation = recommendationMap.get(String(lot.id));
+  const recommendationMetadata = getMetadata(recommendation);
+  const latitude = toNumber(
+    lot.latitude
+    ?? metadata.latitude
+    ?? recommendation?.latitude
+    ?? recommendationMetadata.latitude
+  );
+  const longitude = toNumber(
+    lot.longitude
+    ?? metadata.longitude
+    ?? recommendation?.longitude
+    ?? recommendationMetadata.longitude
+  );
   const distanceKm = getDistanceKm(referenceLocation, { latitude, longitude });
-  const sourceType = metadata.source_type || 'demo';
+  const sourceType = metadata.source_type || recommendation?.source_type || recommendationMetadata.source_type || 'demo';
   const distancePenalty = distanceKm === null ? 60 : Math.min(distanceKm, 12) * 4;
   const feeBonus = metadata.fee_rule ? 8 : 0;
   const availableRatio = stats.total > 0 ? stats.available / stats.total : 0;
@@ -804,8 +819,6 @@ const enrichLot = (lot, recommendationMap = new Map()) => {
     feeBonus +
     (sourceWeights[sourceType] || 0) -
     distancePenalty;
-
-  const recommendation = recommendationMap.get(String(lot.id));
 
   return {
     ...lot,

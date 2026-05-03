@@ -95,42 +95,22 @@ const LandingPage = () => {
       </header>
 
       <main>
-        <section className="relative min-h-[92vh] overflow-hidden pt-16">
+        <section className="relative overflow-hidden border-b border-emerald-100 pt-16 sm:min-h-[92vh]">
           <AiParkingScene />
-          <div className="relative z-10 mx-auto flex min-h-[calc(92vh-4rem)] max-w-7xl flex-col justify-center px-4 py-12 sm:px-6 lg:px-8">
+          <div className="relative z-10 mx-auto flex min-h-[calc(100svh-4rem)] max-w-7xl flex-col justify-center px-4 py-8 sm:min-h-[calc(92vh-4rem)] sm:px-6 sm:py-12 lg:px-8">
             <div className="max-w-3xl">
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="inline-flex items-center rounded-full border border-emerald-200 bg-white/86 px-3 py-1.5 text-sm font-semibold text-emerald-800 shadow-[0_12px_28px_rgba(16,185,129,0.12)] backdrop-blur"
-              >
+              <div className="inline-flex items-center rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-800 shadow-[0_10px_24px_rgba(16,185,129,0.10)] sm:text-sm">
                 <Sparkles className="mr-2 h-4 w-4" />
                 北京高校停车治理试点 MVP
-              </motion.div>
-              <motion.h1
-                initial={{ opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.05 }}
-                className="mt-6 max-w-3xl text-5xl font-semibold leading-[1.02] tracking-normal text-zinc-950 sm:text-6xl lg:text-7xl"
-              >
+              </div>
+              <h1 className="mt-5 max-w-3xl text-4xl font-semibold leading-[1.05] tracking-normal text-zinc-950 sm:mt-6 sm:text-6xl lg:text-7xl">
                 AI 已帮你判断：
                 <span className="block text-emerald-700">现在去哪停更稳</span>
-              </motion.h1>
-              <motion.p
-                initial={{ opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.12 }}
-                className="mt-6 max-w-2xl text-lg leading-8 text-zinc-600"
-              >
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-600 sm:mt-6 sm:text-lg sm:leading-8">
                 ParkGov AI 把车位感知、余位服务、Plan B 备选和治理承接连成一条演示闭环。用户看到的是停车决策，管理端看到的是 AI 写回证据，治理端看到的是压力承接建议。
-              </motion.p>
-              <motion.div
-                initial={{ opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.18 }}
-                className="mt-8 flex flex-col gap-3 sm:flex-row"
-              >
+              </p>
+              <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row">
                 <Link
                   to="/parking-lots"
                   className="inline-flex h-12 items-center justify-center rounded-full bg-zinc-950 px-6 text-base font-semibold text-white shadow-[0_22px_44px_rgba(15,23,42,0.18)] transition hover:bg-zinc-800"
@@ -145,9 +125,9 @@ const LandingPage = () => {
                   查看 AI 证据链
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
-              </motion.div>
-              <div className="mt-8 max-w-2xl rounded-2xl border border-white/75 bg-white/78 px-4 py-3 shadow-[0_16px_36px_rgba(15,23,42,0.08)] backdrop-blur">
-                <PilotBoundaryNote className="text-[13px]" />
+              </div>
+              <div className="mt-6 max-w-2xl rounded-2xl border border-emerald-100 bg-white px-4 py-3 shadow-[0_12px_30px_rgba(15,23,42,0.06)] sm:mt-8">
+                <PilotBoundaryNote className="text-[12px] leading-5 text-zinc-600 sm:text-[13px]" />
               </div>
             </div>
           </div>
@@ -323,7 +303,7 @@ const AiParkingScene = () => (
       </motion.div>
     ))}
 
-    <div className="absolute bottom-8 left-4 right-4 rounded-[28px] border border-emerald-100 bg-white/80 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.10)] backdrop-blur md:hidden">
+    <div className="pointer-events-none absolute bottom-8 left-4 right-4 hidden rounded-[28px] border border-emerald-100 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.10)] md:hidden">
       <div className="flex items-center justify-between">
         <span className="inline-flex items-center rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white">
           <ParkingCircle className="mr-1 h-3.5 w-3.5" />
