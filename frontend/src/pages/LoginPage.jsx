@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   AlertCircle,
@@ -18,6 +18,7 @@ import BrandMark, { CapabilityStrip, PilotBoundaryNote } from '../components/Bra
 
 const LoginPage = () => {
   const { login, loading, error, clearError } = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -95,9 +96,14 @@ const LoginPage = () => {
 
   // Handle demo login
   const handleDemoLogin = async (role) => {
+    if (role === 'user') {
+      toast.success('已进入用户端停车服务演示');
+      navigate('/parking-lots');
+      return;
+    }
+
     const demoCredentials = {
       admin: { username: 'admin', password: 'admin123' },
-      user: { username: 'user', password: 'user123' }
     };
 
     setFormData(demoCredentials[role]);

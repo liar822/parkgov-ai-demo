@@ -126,7 +126,7 @@ function AppContent() {
           path="/login" 
           element={
             user ? (
-              <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />
+              <Navigate to={user.role === 'admin' ? '/admin' : '/parking-lots'} replace />
             ) : (
               <LoginPage />
             )
@@ -149,13 +149,7 @@ function AppContent() {
 
         <Route 
           path="/dashboard/*" 
-          element={
-            user ? (
-              <UserPage />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          } 
+          element={<Navigate to="/parking-lots" replace />}
         />
 
         {/* 404 page */}
@@ -250,7 +244,7 @@ function AdminAccessDenied({ user, login }) {
                 {switching ? '正在切换...' : '切换管理员演示账号'}
               </button>
               <Link
-                to="/dashboard"
+                to="/parking-lots"
                 className="inline-flex items-center justify-center rounded-md border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
               >
                 返回用户端
