@@ -4,7 +4,9 @@ import { toast } from 'react-hot-toast';
 // Create axios instance with default config
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
-  timeout: 30000,
+  // Render free instances can cold-start in 30s+. Keep public demo requests
+  // patient enough so visitors do not see a false "backend disconnected" state.
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },

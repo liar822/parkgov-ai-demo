@@ -3647,10 +3647,10 @@ const ServiceUnavailableState = ({ error, onRetry, refreshing }) => (
         </div>
         <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">Backend Required</p>
         <h1 className="mt-2 text-2xl font-semibold leading-tight text-zinc-950 sm:text-3xl">
-          后端服务未连接，暂不能展示实时余位
+          后端服务正在唤醒，暂不能展示实时余位
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-600">
-          ParkGov AI 线上展示必须连接 Render 后端和 Neon PostgreSQL。当前不会使用静态假数据冒充余位，请检查 `VITE_API_URL`、Render 服务健康状态和数据库连接。
+          ParkGov AI 线上展示连接 Render 后端和 Neon PostgreSQL。Render 免费实例长时间无人访问后会休眠，首次打开可能需要 30-60 秒唤醒；当前不会使用静态假数据冒充余位，稍等后点击“重新连接”即可。
         </p>
         <div className="mt-5 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm leading-6 text-zinc-600">
           <p className="font-semibold text-zinc-950">错误信息</p>
@@ -3682,7 +3682,7 @@ const ServiceUnavailableState = ({ error, onRetry, refreshing }) => (
             Netlify 前端需要设置 `VITE_API_URL=https://你的后端域名/api`。
           </p>
           <p className="rounded-lg border border-white/10 bg-white/10 p-3">
-            Render 后端需要设置 `DATABASE_URL`、`DATABASE_SSL=true`、`FRONTEND_URLS` 和 `JWT_SECRET`。
+            Render 免费后端可能冷启动；如果刚打开页面显示未连接，等待半分钟后刷新或点“重新连接”。
           </p>
           <p className="rounded-lg border border-white/10 bg-white/10 p-3">
             Neon 数据库初始化后再运行 `seed:mvp` 和 `demo:ai-run`，用户端才会显示真实数据库余位。
