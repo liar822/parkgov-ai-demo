@@ -40,6 +40,19 @@ import Chatbot from '../components/Chatbot';
 const defaultMapStyleUrl = 'https://tiles.openfreemap.org/styles/positron';
 const realMapEnabled = import.meta.env.VITE_ENABLE_REAL_MAP !== 'false';
 
+const withParkingRequestTimeout = (promise, label, timeoutMs = 65000) => {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => {
+      reject(new Error(`${label} 请求超时`));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => {
+    window.clearTimeout(timeoutId);
+  });
+};
+
 const referenceLocation = {
   name: '北京高校试点参考点',
   latitude: 39.9929,
@@ -742,6 +755,38 @@ const getFallbackArrivalAssurance = (lot) => {
 };
 
 const getArrivalAssurance = (lot) => lot?.arrivalAssurance || getFallbackArrivalAssurance(lot);
+
+const getAlternativeLots = (lots, baseLot, limit = 3) => {
+  const baseLotId = baseLot?.id === undefined || baseLot?.id === null ? null : String(baseLot.id);
+
+  return lots
+    .filter((lot) => lot && String(lot.id) !== baseLotId)
+    .map((lot) => {
+      const assurance = getArrivalAssurance(lot);
+      const coordinateBonus = hasNavigableCoordinates(lot) ? 10 : -18;
+      const demoPenalty = lot.sourceType === 'ai_dataset_demo' || lot.sourceType === 'demo' ? -42 : 0;
+      const distanceBonus = lot.distanceKm === null ? -18 : Math.max(0, 18 - Math.min(lot.distanceKm, 18));
+      const score =
+        (assurance?.probability || 0) * 2.4 +
+        lot.stats.available * 0.55 +
+        Math.max(0, 100 - lot.stats.occupancy) * 0.24 +
+        distanceBonus +
+        coordinateBonus +
+        demoPenalty;
+
+      return {
+        lot,
+        score
+      };
+    })
+    .sort((first, second) => (
+      second.score - first.score
+      || (getArrivalAssurance(second.lot)?.probability || 0) - (getArrivalAssurance(first.lot)?.probability || 0)
+      || (first.lot.distanceKm ?? 9999) - (second.lot.distanceKm ?? 9999)
+    ))
+    .slice(0, limit)
+    .map((entry) => entry.lot);
+};
 
 const getDecisionLabel = (status) => {
   const labels = {
@@ -1850,6 +1895,11 @@ const ParkingMap = ({
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState('');
   const mapLots = lots.filter((lot) => lot.latitude !== null && lot.longitude !== null);
+  const mapFocusLots = mapLots.filter((lot) => {
+    const sourceType = lot.sourceType || lot.metadata?.source_type;
+    return sourceType === 'campus_demo' || sourceType === 'campus_camera' || (lot.distanceKm !== null && lot.distanceKm <= 3.5);
+  });
+  const viewportLots = mapFocusLots.length > 0 ? mapFocusLots : mapLots;
   const styleUrl = import.meta.env.VITE_MAP_STYLE_URL || defaultMapStyleUrl;
 
   useEffect(() => {
@@ -1857,20 +1907,24 @@ const ParkingMap = ({
       return undefined;
     }
 
-    const centerLng = mapLots.reduce((sum, lot) => sum + lot.longitude, 0) / mapLots.length;
-    const centerLat = mapLots.reduce((sum, lot) => sum + lot.latitude, 0) / mapLots.length;
+    const centerLng = viewportLots.reduce((sum, lot) => sum + lot.longitude, 0) / viewportLots.length;
+    const centerLat = viewportLots.reduce((sum, lot) => sum + lot.latitude, 0) / viewportLots.length;
 
     try {
       mapRef.current = new maplibregl.Map({
         container: mapContainerRef.current,
         style: styleUrl,
         center: [centerLng, centerLat],
-        zoom: mapLots.length > 1 ? 12 : 15,
+        zoom: viewportLots.length > 1 ? 14 : 15,
         attributionControl: true
       });
 
       mapRef.current.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
-      mapRef.current.on('load', () => setMapReady(true));
+      mapRef.current.on('load', () => {
+        mapRef.current?.resize();
+        window.setTimeout(() => mapRef.current?.resize(), 120);
+        setMapReady(true);
+      });
       mapRef.current.on('error', () => {
         setMapError('开放地图底图加载失败，已切换为轻量散点图。');
       });
@@ -1886,7 +1940,7 @@ const ParkingMap = ({
       setMapReady(false);
     };
     // Initialize once for this component; marker updates are handled separately.
-  }, [styleUrl, mapLots.length]);
+  }, [styleUrl, mapLots.length, viewportLots.length]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) {
@@ -1896,7 +1950,7 @@ const ParkingMap = ({
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
-    const bounds = new maplibregl.LngLatBounds();
+    const viewportBounds = new maplibregl.LngLatBounds();
 
     mapLots.forEach((lot) => {
       const isRecommended = String(lot.id) === String(recommendedLotId);
@@ -1919,23 +1973,26 @@ const ParkingMap = ({
         .addTo(mapRef.current);
 
       markersRef.current.push(marker);
-      bounds.extend([lot.longitude, lot.latitude]);
+      if (viewportLots.some((viewportLot) => String(viewportLot.id) === String(lot.id))) {
+        viewportBounds.extend([lot.longitude, lot.latitude]);
+      }
     });
 
-    if (mapLots.length === 1) {
+    if (viewportLots.length === 1) {
       mapRef.current.flyTo({
-        center: [mapLots[0].longitude, mapLots[0].latitude],
+        center: [viewportLots[0].longitude, viewportLots[0].latitude],
         zoom: 15,
         duration: 500
       });
-    } else if (!bounds.isEmpty()) {
-      mapRef.current.fitBounds(bounds, {
-        padding: 58,
+    } else if (!viewportBounds.isEmpty()) {
+      mapRef.current.fitBounds(viewportBounds, {
+        padding: 72,
         maxZoom: 15,
         duration: 500
       });
     }
-  }, [mapReady, mapLots, onSelectLot, recommendedLotId, selectedLotId]);
+    window.setTimeout(() => mapRef.current?.resize(), 80);
+  }, [mapReady, mapLots, viewportLots, onSelectLot, recommendedLotId, selectedLotId]);
 
   if (mapLots.length === 0) {
     return (
@@ -3757,25 +3814,20 @@ const ParkingLotsPage = () => {
     setError('');
 
     try {
-      const [lotsResult, recommendationsResult] = await Promise.allSettled([
-        parkingService.getAllParkingLots(),
-        parkingService.getRecommendations({ limit: 50 })
-      ]);
-
-      if (lotsResult.status === 'rejected') {
-        throw lotsResult.reason;
-      }
-
-      const response = lotsResult.value;
+      const response = await withParkingRequestTimeout(parkingService.getAllParkingLots(), '停车场余位', 65000);
       const lots = response.data?.data?.parking_lots || [];
       setParkingLots(lots);
+      setLoading(false);
+      setRefreshing(false);
 
-      if (recommendationsResult.status === 'fulfilled') {
-        setArrivalRecommendations(recommendationsResult.value.data?.data?.recommendations || []);
-      } else {
-        setArrivalRecommendations([]);
-        console.warn('Arrival recommendations unavailable, using frontend fallback.', recommendationsResult.reason);
-      }
+      withParkingRequestTimeout(parkingService.getRecommendations({ limit: 50 }), '到场保障推荐', 12000)
+        .then((recommendationsResponse) => {
+          setArrivalRecommendations(recommendationsResponse.data?.data?.recommendations || []);
+        })
+        .catch((recommendationsError) => {
+          setArrivalRecommendations([]);
+          console.warn('Arrival recommendations unavailable, using frontend fallback.', recommendationsError);
+        });
     } catch (requestError) {
       setError(requestError.response?.data?.error || requestError.message || '停车场数据加载失败');
     } finally {
@@ -3943,15 +3995,19 @@ const ParkingLotsPage = () => {
     [...filteredLots].sort((first, second) => first.stats.occupancy - second.stats.occupancy)[0] || null
   ), [filteredLots]);
   const assuranceAlternatives = useMemo(() => (
-    filteredLots
-      .filter((lot) => selectedLot && String(lot.id) !== String(selectedLot.id))
-      .sort((first, second) => (
-        (getArrivalAssurance(second)?.probability || 0) - (getArrivalAssurance(first)?.probability || 0)
-        || second.stats.available - first.stats.available
-        || (first.distanceKm ?? 9999) - (second.distanceKm ?? 9999)
-      ))
-      .slice(0, 2)
+    getAlternativeLots(filteredLots, recommendedLot, 4)
+  ), [filteredLots, recommendedLot]);
+  const selectedAlternatives = useMemo(() => (
+    getAlternativeLots(filteredLots, selectedLot, 4)
   ), [filteredLots, selectedLot]);
+  const nearestAlternativeLot = useMemo(() => (
+    filteredLots
+      .filter((lot) => recommendedLot && String(lot.id) !== String(recommendedLot.id) && lot.distanceKm !== null)
+      .sort((first, second) => first.distanceKm - second.distanceKm || (getArrivalAssurance(second)?.probability || 0) - (getArrivalAssurance(first)?.probability || 0))[0]
+    || assuranceAlternatives[1]
+    || assuranceAlternatives[0]
+    || null
+  ), [assuranceAlternatives, filteredLots, recommendedLot]);
   const latestArrivalIntentRecord = arrivalIntentRecords[0] || null;
   const averageOccupancy = summary.totalSpaces > 0
     ? Math.round((summary.occupiedSpaces / summary.totalSpaces) * 100)
@@ -4274,7 +4330,7 @@ const ParkingLotsPage = () => {
             <section className={`${mobileView === 'recommend' ? 'grid' : 'hidden'} gap-3 md:grid-cols-3 lg:grid`}>
               <QuickPick label="AI 首选" lot={recommendedLot} icon={Sparkles} onSelectLot={openLotDetails} />
               <QuickPick label="更稳备选" lot={assuranceAlternatives[0] || mostAvailableLot} icon={ShieldCheck} onSelectLot={openLotDetails} rank="A" />
-              <QuickPick label="更近备选" lot={assuranceAlternatives[1] || nearestLot} icon={Navigation} onSelectLot={openLotDetails} rank="B" />
+              <QuickPick label="更近备选" lot={nearestAlternativeLot || nearestLot} icon={Navigation} onSelectLot={openLotDetails} rank="B" />
             </section>
 
             <section className={`${(mobileView === 'list' || isAiAdjustOpen) ? 'block' : 'hidden'} rounded-3xl border border-emerald-100 bg-white p-3 shadow-[0_14px_34px_rgba(15,23,42,0.05)] lg:block`}>
@@ -4392,7 +4448,7 @@ const ParkingLotsPage = () => {
                 selectedLotId={selectedLot?.id}
                 selectedLot={selectedLot}
 	                recommendedLot={recommendedLot}
-	                alternatives={assuranceAlternatives}
+	                alternatives={selectedAlternatives}
 	                activeArrivalIntent={latestArrivalIntentRecord}
 	                creatingArrivalIntent={creatingArrivalIntent}
 	                onSelectLot={openLotDetails}
