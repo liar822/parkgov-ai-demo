@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -19,6 +19,7 @@ import BrandMark, { CapabilityStrip, PilotBoundaryNote } from '../components/Bra
 const LoginPage = () => {
   const { login, loading, error, clearError } = useAuth();
   const navigate = useNavigate();
+  const autoDemoStartedRef = useRef(false);
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -95,10 +96,10 @@ const LoginPage = () => {
   };
 
   // Handle demo login
-  const handleDemoLogin = async (role) => {
+  const handleDemoLogin = async (role, targetPath) => {
     if (role === 'user') {
       toast.success('已进入用户端停车服务演示');
-      navigate('/parking-lots');
+      navigate(targetPath || '/parking-lots');
       return;
     }
 
@@ -114,6 +115,7 @@ const LoginPage = () => {
       
       if (result.success) {
         toast.success(role === 'admin' ? '已进入管理端演示账号' : '已进入用户端演示账号');
+        navigate(targetPath || '/admin');
       } else {
         toast.error(result.error || '演示账号登录失败');
       }
@@ -124,6 +126,22 @@ const LoginPage = () => {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (autoDemoStartedRef.current) {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const demoRole = params.get('demo');
+    const nextPath = params.get('next');
+    const safeNextPath = nextPath && nextPath.startsWith('/') ? nextPath : undefined;
+
+    if (demoRole === 'admin' || demoRole === 'user') {
+      autoDemoStartedRef.current = true;
+      handleDemoLogin(demoRole, safeNextPath);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#f4f6f3] text-zinc-950 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(440px,520px)]">

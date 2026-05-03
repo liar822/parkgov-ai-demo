@@ -55,6 +55,30 @@ const metrics = [
   { value: '0', label: '真实扣款与锁位承诺' }
 ];
 
+const demoEntrances = [
+  {
+    label: '用户端演示',
+    title: 'AI 帮我去哪停',
+    detail: '地图、AI 首选、Plan B、导航和到场码',
+    href: '/parking-lots',
+    icon: Navigation
+  },
+  {
+    label: '管理端演示',
+    title: 'AI 识别怎么证明',
+    detail: '自动登录演示账号，查看训练与写回证据',
+    href: '/login?demo=admin&next=/admin/video',
+    icon: Video
+  },
+  {
+    label: '治理端演示',
+    title: '高风险怎么分流',
+    detail: '自动进入治理分析，查看备选承接建议',
+    href: '/login?demo=admin&next=/admin/governance',
+    icon: GitBranch
+  }
+];
+
 const toneClasses = {
   primary: 'border-emerald-400 bg-emerald-500 text-white shadow-[0_18px_40px_rgba(16,185,129,0.32)]',
   backup: 'border-lime-300 bg-lime-100 text-lime-900 shadow-[0_14px_30px_rgba(132,204,22,0.22)]',
@@ -128,6 +152,28 @@ const LandingPage = () => {
               </div>
               <div className="mt-6 max-w-2xl rounded-2xl border border-emerald-100 bg-white px-4 py-3 shadow-[0_12px_30px_rgba(15,23,42,0.06)] sm:mt-8">
                 <PilotBoundaryNote className="text-[12px] leading-5 text-zinc-600 sm:text-[13px]" />
+              </div>
+              <div className="mt-4 grid max-w-3xl gap-3 sm:grid-cols-3">
+                {demoEntrances.map((entry) => {
+                  const Icon = entry.icon;
+
+                  return (
+                    <Link
+                      key={entry.label}
+                      to={entry.href}
+                      className="group rounded-2xl border border-emerald-100 bg-white px-4 py-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-[0_18px_38px_rgba(16,185,129,0.14)]"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs font-semibold text-emerald-700">{entry.label}</span>
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 transition group-hover:bg-emerald-600 group-hover:text-white">
+                          <Icon className="h-4 w-4" />
+                        </span>
+                      </div>
+                      <p className="mt-3 text-sm font-semibold text-zinc-950">{entry.title}</p>
+                      <p className="mt-1 text-xs leading-5 text-zinc-500">{entry.detail}</p>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           </div>
