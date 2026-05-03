@@ -4,49 +4,49 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-const DATA_ROOT = path.resolve(__dirname, '..', '..', '..', '..', 'data');
+const DATA_ROOT = path.resolve(__dirname, '..', '..', 'data');
 
 const IMPORT_STEPS = [
   {
     name: 'open data source registry',
     script: 'seedDataSourcesFromRegistry.js',
-    args: ['../../data/open_data_source_registry.csv']
+    args: ['../data/open_data_source_registry.csv']
   },
   {
     name: 'campus parking lots',
     script: 'importParkingLotsFromCsv.js',
-    args: ['../../data/beijing_campus_parking_demo.csv']
+    args: ['../data/beijing_campus_parking_demo.csv']
   },
   {
     name: 'ACPDS public dataset parking lot',
     script: 'importParkingLotsFromCsv.js',
-    args: ['../../data/acpds_public_dataset_parking_demo.csv']
+    args: ['../data/acpds_public_dataset_parking_demo.csv']
   },
   {
     name: 'campus camera sources',
     script: 'importCameraSourcesFromCsv.js',
-    args: ['../../data/campus_camera_sources_demo.csv']
+    args: ['../data/campus_camera_sources_demo.csv']
   },
   {
     name: 'ACPDS camera sources',
     script: 'importCameraSourcesFromCsv.js',
-    args: ['../../data/acpds_camera_sources_demo.csv']
+    args: ['../data/acpds_camera_sources_demo.csv']
   },
   {
     name: 'campus slot ROI',
     script: 'importSlotRoisFromCsv.js',
-    args: ['../../data/campus_parking_slot_roi_demo.csv']
+    args: ['../data/campus_parking_slot_roi_demo.csv']
   },
   {
     name: 'ACPDS slot ROI',
     script: 'importSlotRoisFromCsv.js',
-    args: ['../../data/acpds_public_dataset_slot_roi_demo.csv']
+    args: ['../data/acpds_public_dataset_slot_roi_demo.csv']
   },
   {
     name: 'Beijing roadside open data sample',
     script: 'importBeijingOpenData.js',
     args: [
-      '../../data/beijing_open_data_roadside_import_sample.csv',
+      '../data/beijing_open_data_roadside_import_sample.csv',
       '--source',
       'beijing_roadside_parking_basic'
     ]
@@ -55,7 +55,7 @@ const IMPORT_STEPS = [
     name: 'Beijing realtime parking open data sample',
     script: 'importBeijingOpenData.js',
     args: [
-      '../../data/beijing_open_data_realtime_import_sample.csv',
+      '../data/beijing_open_data_realtime_import_sample.csv',
       '--source',
       'beijing_realtime_parking',
       '--sync-slots',

@@ -9,7 +9,7 @@ function parseArgs(argv) {
   const args = argv.slice(2);
   return {
     dryRun: args.includes('--dry-run'),
-    registryPath: args.find((arg) => !arg.startsWith('--')) || '../../data/open_data_source_registry.csv'
+    registryPath: args.find((arg) => !arg.startsWith('--')) || '../data/open_data_source_registry.csv'
   };
 }
 
