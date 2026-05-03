@@ -1,9 +1,21 @@
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
+const getDefaultApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+
+  if (typeof window !== 'undefined' && window.location.hostname.includes('netlify.app')) {
+    return 'https://parkgov-ai-api.onrender.com/api';
+  }
+
+  return '/api';
+};
+
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: getDefaultApiBaseUrl(),
   // Render free instances can cold-start in 30s+. Keep public demo requests
   // patient enough so visitors do not see a false "backend disconnected" state.
   timeout: 60000,

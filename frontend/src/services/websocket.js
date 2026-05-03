@@ -2,6 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { toast } from 'react-hot-toast';
 
+const getDefaultSocketUrl = () => {
+  if (import.meta.env.VITE_WS_URL) {
+    return import.meta.env.VITE_WS_URL;
+  }
+
+  if (typeof window !== 'undefined' && window.location.hostname.includes('netlify.app')) {
+    return 'https://parkgov-ai-api.onrender.com';
+  }
+
+  return window.location.origin;
+};
+
 class WebSocketService {
   constructor() {
     this.socket = null;
@@ -20,7 +32,7 @@ class WebSocketService {
       return;
     }
 
-    const socketUrl = url || import.meta.env.VITE_WS_URL || window.location.origin;
+    const socketUrl = url || getDefaultSocketUrl();
     
     console.log('Connecting to WebSocket:', socketUrl);
 
