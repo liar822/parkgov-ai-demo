@@ -2,12 +2,12 @@ import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
 const getDefaultApiBaseUrl = () => {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+  if (typeof window !== 'undefined' && window.location.hostname.includes('netlify.app')) {
+    return '/api';
   }
 
-  if (typeof window !== 'undefined' && window.location.hostname.includes('netlify.app')) {
-    return 'https://parkgov-ai-api.onrender.com/api';
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
   }
 
   return '/api';

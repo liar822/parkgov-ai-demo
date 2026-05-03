@@ -325,6 +325,19 @@ const getAdviceClassName = (tone) => {
   }
 };
 
+const withRequestTimeout = (promise, label, timeoutMs = 22000) => {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => {
+      reject(new Error(`${label} 请求超时，请稍后刷新`));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => {
+    window.clearTimeout(timeoutId);
+  });
+};
+
 const AdminGovernanceOverview = () => {
   const [lots, setLots] = useState([]);
   const [candidates, setCandidates] = useState([]);
@@ -345,28 +358,50 @@ const AdminGovernanceOverview = () => {
     setError('');
 
     try {
-      const [lotsResponse, candidatesResponse, sourcesResponse, governanceResponse] = await Promise.all([
-        parkingService.getAllParkingLots(),
-        adminService.getParkingLotCandidates({ limit: 200 }),
-        adminService.getDataSources(),
-        adminService.getGovernanceSummary()
+      const results = await Promise.allSettled([
+        withRequestTimeout(parkingService.getAllParkingLots(), '停车场列表'),
+        withRequestTimeout(adminService.getParkingLotCandidates({ limit: 200 }), '开放地图候选'),
+        withRequestTimeout(adminService.getDataSources(), '数据源台账'),
+        withRequestTimeout(adminService.getGovernanceSummary(), '治理汇总')
       ]);
 
-      setLots(lotsResponse.data?.data?.parking_lots || lotsResponse.data?.data || []);
-      const nextCandidates = candidatesResponse.data?.data?.parking_lot_candidates || [];
-      setCandidates(nextCandidates);
-      setCandidateLinks(
-        nextCandidates.reduce((accumulator, candidate) => {
-          if (candidate.linked_parking_lot_id) {
-            accumulator[candidate.id] = String(candidate.linked_parking_lot_id);
-          }
-          return accumulator;
-        }, {})
-      );
-      setDataSources(sourcesResponse.data?.data?.data_sources || []);
-      setGovernanceSummary(governanceResponse.data?.data || null);
+      const [lotsResult, candidatesResult, sourcesResult, governanceResult] = results;
+
+      if (lotsResult.status === 'fulfilled') {
+        setLots(lotsResult.value.data?.data?.parking_lots || lotsResult.value.data?.data || []);
+      }
+
+      if (candidatesResult.status === 'fulfilled') {
+        const nextCandidates = candidatesResult.value.data?.data?.parking_lot_candidates || [];
+        setCandidates(nextCandidates);
+        setCandidateLinks(
+          nextCandidates.reduce((accumulator, candidate) => {
+            if (candidate.linked_parking_lot_id) {
+              accumulator[candidate.id] = String(candidate.linked_parking_lot_id);
+            }
+            return accumulator;
+          }, {})
+        );
+      }
+
+      if (sourcesResult.status === 'fulfilled') {
+        setDataSources(sourcesResult.value.data?.data?.data_sources || []);
+      }
+
+      if (governanceResult.status === 'fulfilled') {
+        setGovernanceSummary(governanceResult.value.data?.data || null);
+      }
+
+      const failedResults = results.filter((result) => result.status === 'rejected');
+      if (failedResults.length === results.length) {
+        const firstError = failedResults[0]?.reason;
+        setError(firstError?.response?.data?.error || firstError?.message || '治理概览数据加载失败');
+      } else if (failedResults.length > 0) {
+        setError('部分治理数据暂未返回，已展示可用数据；稍后可刷新补齐。');
+        console.warn('Some governance data requests failed; showing available data.', failedResults.map((result) => result.reason));
+      }
     } catch (requestError) {
-      setError(requestError.response?.data?.error || requestError.message || '治理概览数据加载失败');
+      setError(requestError?.message || '治理概览数据加载失败');
     } finally {
       setLoading(false);
     }
