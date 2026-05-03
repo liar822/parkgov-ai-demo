@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, Routes, Route, Navigate } from 'react-router-dom';
+import { Link, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { AlertTriangle, ArrowRight, LogIn, ParkingCircle } from 'lucide-react';
 
@@ -124,13 +124,7 @@ function AppContent() {
 
         <Route
           path="/login" 
-          element={
-            user ? (
-              <Navigate to={user.role === 'admin' ? '/admin' : '/parking-lots'} replace />
-            ) : (
-              <LoginPage />
-            )
-          } 
+          element={<LoginRoute user={user} />}
         />
 
         {/* Protected routes */}
@@ -179,6 +173,22 @@ function AppContent() {
         />
       </Routes>
     </div>
+  );
+}
+
+function LoginRoute({ user }) {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const demoRole = params.get('demo');
+
+  if (demoRole === 'admin' || demoRole === 'user') {
+    return <LoginPage />;
+  }
+
+  return user ? (
+    <Navigate to={user.role === 'admin' ? '/admin' : '/parking-lots'} replace />
+  ) : (
+    <LoginPage />
   );
 }
 
