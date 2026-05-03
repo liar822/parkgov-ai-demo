@@ -11,6 +11,7 @@ const { ensureOpenDataTables } = require('../services/openDataSchema');
 const ParkingSlotRoiService = require('../services/parkingSlotRoiService');
 const DemoAiRunService = require('../services/demoAiRunService');
 const DemoAiInferenceService = require('../services/demoAiInferenceService');
+const ArrivalAssuranceService = require('../services/arrivalAssuranceService');
 
 // Validation schemas
 const createLotSchema = Joi.object({
@@ -95,6 +96,13 @@ const candidateReviewSchema = Joi.object({
   linked_parking_lot_id: Joi.number().integer().positive().allow(null).optional()
 });
 
+const arrivalIntentQuerySchema = Joi.object({
+  status: Joi.string().valid('active', 'expired', 'cancelled').optional(),
+  lot_id: Joi.number().integer().positive().optional(),
+  limit: Joi.number().integer().min(1).max(100).default(20),
+  offset: Joi.number().integer().min(0).default(0)
+});
+
 class AdminController {
   // Admin authentication
   static async login(req, res) {
@@ -157,6 +165,49 @@ class AdminController {
       console.error('Error during login:', error);
       res.status(500).json({
         error: 'Login failed',
+        message: error.message
+      });
+    }
+  }
+
+  static async getArrivalIntents(req, res) {
+    try {
+      const { error, value } = arrivalIntentQuerySchema.validate(req.query);
+      if (error) {
+        return res.status(400).json({
+          error: 'Validation error',
+          details: error.details[0].message
+        });
+      }
+
+      const data = await ArrivalAssuranceService.listArrivalIntents(value);
+
+      res.json({
+        success: true,
+        data
+      });
+    } catch (error) {
+      console.error('Error getting arrival intents:', error);
+      res.status(500).json({
+        error: 'Failed to get arrival intents',
+        message: error.message
+      });
+    }
+  }
+
+  static async expireArrivalIntents(req, res) {
+    try {
+      const data = await ArrivalAssuranceService.expireStaleArrivalIntents();
+
+      res.json({
+        success: true,
+        message: 'Expired stale arrival intents',
+        data
+      });
+    } catch (error) {
+      console.error('Error expiring arrival intents:', error);
+      res.status(500).json({
+        error: 'Failed to expire arrival intents',
         message: error.message
       });
     }
@@ -1550,6 +1601,10 @@ class AdminController {
         ORDER BY occupancy_rate DESC, pl.name
       `);
 
+      const recommendationData = await ArrivalAssuranceService.getRecommendations({ limit: 50 });
+      const recommendationByLotId = new Map(
+        recommendationData.recommendations.map((recommendation) => [Number(recommendation.id), recommendation])
+      );
       const now = Date.now();
       const lots = result.rows.map((lot) => {
         const totalSlots = Number(lot.total_slots || lot.configured_total_slots || 0);
@@ -1560,6 +1615,30 @@ class AdminController {
         const cameraSourceCount = Number(lot.camera_source_count || 0);
         const onlineCameraCount = Number(lot.online_camera_count || 0);
         const sampleCameraCount = Number(lot.sample_camera_count || 0);
+        const metadata = lot.slot_configuration?.metadata || {};
+        const hasCoordinates = Boolean(metadata.latitude && metadata.longitude);
+        const hasFeeRule = Boolean(metadata.fee_rule);
+        const latestSignalAt = lot.latest_inference_at || lot.latest_open_data_observed_at || metadata.imported_at || lot.updated_at;
+        const recommendation = recommendationByLotId.get(Number(lot.id));
+        const signalAgeHours = latestSignalAt
+          ? Math.max(0, (now - new Date(latestSignalAt).getTime()) / (60 * 60 * 1000))
+          : null;
+        const freshnessScore = signalAgeHours === null
+          ? 25
+          : signalAgeHours <= 1 ? 100 : signalAgeHours <= 6 ? 85 : signalAgeHours <= 24 ? 65 : signalAgeHours <= 72 ? 45 : 25;
+        const arrivalQualityScore = Math.round(
+          (hasCoordinates ? 20 : 0)
+          + (hasFeeRule ? 15 : 0)
+          + Math.min(25, roiCoverageRate * 0.25)
+          + (lot.latest_inference_at ? 25 : 0)
+          + freshnessScore * 0.15
+        );
+        const missingArrivalFields = [
+          !hasCoordinates ? '坐标' : null,
+          !hasFeeRule ? '收费规则' : null,
+          !lot.latest_inference_at ? 'AI 事件' : null,
+          roiCoverageRate <= 0 ? 'ROI' : null
+        ].filter(Boolean);
         const alerts = [];
 
         if (totalSlots > 0 && occupancyRate >= 90) {
@@ -1600,6 +1679,10 @@ class AdminController {
 
         if (lot.latest_open_data_observed_at && now - new Date(lot.latest_open_data_observed_at).getTime() > 24 * 60 * 60 * 1000) {
           alerts.push({ code: 'open_data_stale', level: 'notice', message: '开放数据余位快照已超过 24 小时，需要重新导入或核验。' });
+        }
+
+        if (arrivalQualityScore < 60) {
+          alerts.push({ code: 'arrival_assurance_low', level: 'notice', message: '到场保障质量偏低，需要补齐坐标、收费、ROI 或最近 AI/开放数据。' });
         }
 
         return {
@@ -1655,6 +1738,19 @@ class AdminController {
             latest_available_spaces: lot.latest_open_data_available_spaces,
             latest_availability_level: lot.latest_open_data_availability_level
           },
+          arrival_assurance: {
+            quality_score: Math.min(100, arrivalQualityScore),
+            quality_label: arrivalQualityScore >= 80 ? '保障较好' : arrivalQualityScore >= 60 ? '基本可用' : '需补数据',
+            signal_age_hours: signalAgeHours === null ? null : Math.round(signalAgeHours * 10) / 10,
+            has_coordinates: hasCoordinates,
+            has_fee_rule: hasFeeRule,
+            missing_fields: missingArrivalFields,
+            recommendation_probability: recommendation?.probability ?? null,
+            risk: recommendation?.risk || null,
+            decision_status: recommendation?.decision_status || null,
+            assurance_breakdown: recommendation?.assurance_breakdown || null,
+            alternatives: recommendation?.alternatives || []
+          },
           alerts
         };
       });
@@ -1669,6 +1765,8 @@ class AdminController {
         accumulator.lots_without_camera += lot.camera.camera_source_count === 0 ? 1 : 0;
         accumulator.low_roi_coverage_lots += lot.roi.roi_coverage_rate < 80 ? 1 : 0;
         accumulator.stale_inference_lots += lot.alerts.some((alert) => ['no_inference_event', 'stale_inference'].includes(alert.code)) ? 1 : 0;
+        accumulator.low_arrival_assurance_lots += lot.arrival_assurance.quality_score < 60 ? 1 : 0;
+        accumulator.arrival_assurance_score_sum += lot.arrival_assurance.quality_score;
         accumulator.active_ai_processing_jobs += ['queued', 'processing'].includes(lot.ai_processing.latest_status) ? 1 : 0;
         accumulator.failed_ai_processing_jobs += lot.ai_processing.latest_status === 'failed' ? 1 : 0;
         return accumulator;
@@ -1682,12 +1780,17 @@ class AdminController {
         lots_without_camera: 0,
         low_roi_coverage_lots: 0,
         stale_inference_lots: 0,
+        low_arrival_assurance_lots: 0,
+        arrival_assurance_score_sum: 0,
         active_ai_processing_jobs: 0,
         failed_ai_processing_jobs: 0
       });
 
       summary.occupancy_rate = summary.total_slots > 0
         ? Math.round((summary.occupied_slots / summary.total_slots) * 1000) / 10
+        : 0;
+      summary.average_arrival_assurance_score = summary.total_lots > 0
+        ? Math.round(summary.arrival_assurance_score_sum / summary.total_lots)
         : 0;
 
       res.json({
@@ -1805,6 +1908,47 @@ class AdminController {
           source_key
       `);
 
+      const highRiskDestinationResult = await client.query(`
+        SELECT
+          pl.id,
+          pl.name,
+          COALESCE(NULLIF(pl.slot_configuration->'metadata'->>'district', ''), '未标注区域') AS district,
+          NULLIF(pl.slot_configuration->'metadata'->>'latitude', '') AS latitude,
+          NULLIF(pl.slot_configuration->'metadata'->>'longitude', '') AS longitude,
+          NULLIF(pl.slot_configuration->'metadata'->>'fee_rule', '') AS fee_rule,
+          COALESCE(slot_stats.total_slots, 0)::INTEGER AS total_slots,
+          GREATEST(COALESCE(slot_stats.total_slots, pl.total_slots, 0) - COALESCE(slot_stats.occupied_slots, 0), 0)::INTEGER AS available_slots,
+          CASE
+            WHEN COALESCE(slot_stats.total_slots, pl.total_slots, 0) > 0
+              THEN ROUND((COALESCE(slot_stats.occupied_slots, 0)::NUMERIC / COALESCE(slot_stats.total_slots, pl.total_slots, 1)::NUMERIC) * 100, 2)
+            ELSE 0
+          END AS occupancy_rate,
+          COALESCE(candidate_stats.candidate_count, 0)::INTEGER AS nearby_candidate_count
+        FROM parking_lots pl
+        LEFT JOIN LATERAL (
+          SELECT
+            COUNT(*) AS total_slots,
+            COUNT(*) FILTER (WHERE ps.is_occupied = true) AS occupied_slots
+          FROM parking_slots ps
+          WHERE ps.parking_lot_id = pl.id
+        ) slot_stats ON true
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*) AS candidate_count
+          FROM parking_lot_candidates candidates
+          WHERE candidates.is_active = true
+            AND candidates.review_status IN ('candidate', 'shortlisted', 'linked')
+            AND COALESCE(NULLIF(candidates.metadata->>'district', ''), COALESCE(NULLIF(pl.slot_configuration->'metadata'->>'district', ''), '未标注区域'))
+              = COALESCE(NULLIF(pl.slot_configuration->'metadata'->>'district', ''), '未标注区域')
+        ) candidate_stats ON true
+        WHERE pl.is_active = true
+          AND COALESCE(slot_stats.total_slots, pl.total_slots, 0) > 0
+          AND (
+            COALESCE(slot_stats.occupied_slots, 0)::NUMERIC / COALESCE(slot_stats.total_slots, pl.total_slots, 1)::NUMERIC
+          ) >= 0.75
+        ORDER BY occupancy_rate DESC, available_slots ASC
+        LIMIT 8
+      `);
+
       const districts = districtResult.rows.map((district) => {
         const totalSlots = Number(district.total_slots || 0);
         const occupiedSlots = Number(district.occupied_slots || 0);
@@ -1830,6 +1974,42 @@ class AdminController {
           level: 'warning',
           title: '高占用区域需优先巡查',
           description: `${highOccupancyDistricts.map((district) => district.district).join('、')} 当前占用率超过 75%，适合优先布设诱导、临停分流或采集高峰样本。`
+        });
+      }
+
+      const arrivalRecommendationData = await ArrivalAssuranceService.getRecommendations({ limit: 50 });
+      const arrivalRecommendationById = new Map(
+        arrivalRecommendationData.recommendations.map((lot) => [Number(lot.id), lot])
+      );
+      const highRiskDestinations = highRiskDestinationResult.rows.map((lot) => {
+        const recommendation = arrivalRecommendationById.get(Number(lot.id));
+        const alternatives = (recommendation?.alternatives || []).map((candidate) => ({
+          id: candidate.id,
+          name: candidate.name,
+          probability: candidate.probability,
+          available_slots: candidate.available_slots,
+          distance_km: candidate.distance_km,
+          risk: candidate.risk
+        }));
+
+        return {
+          ...lot,
+          has_coordinates: Boolean(lot.latitude && lot.longitude),
+          has_fee_rule: Boolean(lot.fee_rule),
+          arrival_assurance_score: recommendation?.probability ?? null,
+          risk: recommendation?.risk || null,
+          decision_status: recommendation?.decision_status || null,
+          alternatives,
+          suggested_action: alternatives.length > 0 ? '建议诱导至备选承接点' : '建议核验周边候选资源'
+        };
+      });
+
+      if (highRiskDestinations.length > 0) {
+        recommendations.push({
+          type: 'arrival_assurance_risk',
+          level: 'warning',
+          title: '高风险目的地需要备选承接',
+          description: `${highRiskDestinations.slice(0, 3).map((lot) => lot.name).join('、')} 占用率偏高，用户端应优先展示 Plan B/Plan C 和到场风险提示。`
         });
       }
 
@@ -1863,6 +2043,9 @@ class AdminController {
           },
           peak_hours: peakHourResult.rows,
           data_sources: dataSourceResult.rows,
+          arrival_assurance: {
+            high_risk_destinations: highRiskDestinations
+          },
           recommendations,
           generated_at: new Date().toISOString()
         }

@@ -90,6 +90,7 @@ const getCounts = () => {
         'parking_analytics', (SELECT COUNT(*) FROM parking_analytics),
         'video_analysis', (SELECT COUNT(*) FROM video_analysis),
         'bookings', (SELECT COUNT(*) FROM bookings),
+        'arrival_intents', (SELECT COUNT(*) FROM arrival_intents),
         'system_logs', (SELECT COUNT(*) FROM system_logs),
         'chatbot_conversations', (SELECT COUNT(*) FROM chatbot_conversations)
       )::text;

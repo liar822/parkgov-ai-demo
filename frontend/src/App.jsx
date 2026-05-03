@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage';
 import AdminPage from './pages/AdminPage';
 import UserPage from './pages/UserPage';
 import ParkingLotsPage from './pages/ParkingLotsPage';
+import LandingPage from './pages/LandingPage';
 import LoadingSpinner from './components/LoadingSpinner';
 import BrandMark, { PilotBoundaryNote } from './components/BrandMark';
 
@@ -111,6 +112,11 @@ function AppContent() {
     <div className="min-h-screen bg-gray-50">
       <Routes>
         {/* Public routes */}
+        <Route
+          path="/"
+          element={<LandingPage />}
+        />
+
         <Route 
           path="/parking-lots"
           element={<ParkingLotsPage />}
@@ -148,18 +154,6 @@ function AppContent() {
               <UserPage />
             ) : (
               <Navigate to="/login" replace />
-            )
-          } 
-        />
-
-        {/* Default redirects */}
-        <Route 
-          path="/" 
-          element={
-            user ? (
-              <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />
-            ) : (
-              <Navigate to="/parking-lots" replace />
             )
           } 
         />

@@ -35,6 +35,8 @@ router.get('/parking-lot-candidates', AdminController.getParkingLotCandidates);
 router.put('/parking-lot-candidates/:candidateId/review', AdminController.updateParkingLotCandidateReview);
 router.get('/parking-operations', AdminController.getParkingOperations);
 router.get('/governance/summary', AdminController.getGovernanceSummary);
+router.get('/arrival-intents', AdminController.getArrivalIntents);
+router.post('/arrival-intents/expire', AdminController.expireArrivalIntents);
 
 // System configuration
 router.get('/configuration', AdminController.getSystemConfiguration);

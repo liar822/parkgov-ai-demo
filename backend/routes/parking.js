@@ -5,6 +5,15 @@ const ParkingController = require('../controllers/parkingController');
 // Get all parking lots
 router.get('/lots', ParkingController.getAllParkingLots);
 
+// Get arrival assurance recommendations
+router.get('/recommendations', ParkingController.getRecommendations);
+
+// Create a demo arrival intent without locking a real slot
+router.post('/arrival-intents', ParkingController.createArrivalIntent);
+
+// Get a demo arrival intent receipt by display code
+router.get('/arrival-intents/:displayCode', ParkingController.getArrivalIntent);
+
 // Get parking lot status with all slots
 router.get('/status/:lotId', ParkingController.getParkingStatus);
 

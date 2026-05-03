@@ -292,6 +292,26 @@ const getGovernanceAdvice = (candidate, nearestLot, missingFields) => {
   };
 };
 
+const getCandidateResearchReason = ({ nearestLot, missingFields, completeness, advice }) => {
+  if (advice?.tone === 'warning' && nearestLot) {
+    return `距离正式停车场 ${formatDistance(nearestLot.distanceMeters)}，优先判断是否重复或可合并为同一资源。`;
+  }
+
+  if (nearestLot?.stats?.occupancy >= 75 && nearestLot.distanceMeters <= 800) {
+    return `靠近高占用停车场 ${nearestLot.name}，可作为备选承接点进入现场核验。`;
+  }
+
+  if (completeness >= 80) {
+    return '名称、坐标和基础字段较完整，适合进入校园调研或开放数据交叉核验。';
+  }
+
+  if (missingFields.length > 0) {
+    return `仍缺 ${missingFields.join('、')}，建议先补字段再纳入正式停车资源。`;
+  }
+
+  return '保留为候选资源，等待官方数据、校园调研或现场核验补强。';
+};
+
 const getAdviceClassName = (tone) => {
   switch (tone) {
     case 'ok':
@@ -522,6 +542,7 @@ const AdminGovernanceOverview = () => {
   const governanceDistrictRows = governanceSummary?.districts?.length > 0 ? governanceSummary.districts : districtSummary;
   const governanceRecommendations = governanceSummary?.recommendations || [];
   const peakHours = governanceSummary?.peak_hours || [];
+  const highRiskDestinations = governanceSummary?.arrival_assurance?.high_risk_destinations || [];
   const pressureReliefCandidates = activeGovernanceRows.filter((row) => (
     row.nearestLot
     && row.nearestLot.stats.occupancy >= 75
@@ -582,8 +603,9 @@ const AdminGovernanceOverview = () => {
         };
       })
       .filter((scenario) => scenario.alternative || scenario.nearbyCandidates > 0)
-      .slice(0, 2);
-  }, [lots, pressureReliefCandidates, topPressureLots]);
+	      .slice(0, 2);
+	  }, [lots, pressureReliefCandidates, topPressureLots]);
+  const primaryDiversionScenario = diversionScenarios[0] || null;
 
   const toggleCandidateSelection = (candidateId) => {
     setSelectedCandidateIds((current) => (
@@ -763,6 +785,71 @@ const AdminGovernanceOverview = () => {
         </div>
       </section>
 
+      <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+        <div className="grid gap-0 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+          <div className="border-b border-zinc-100 bg-zinc-950 px-5 py-5 text-white lg:border-b-0 lg:border-r lg:border-zinc-800">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">Judging Focus</p>
+            <h2 className="mt-2 text-2xl font-semibold leading-tight">治理端看什么</h2>
+            <p className="mt-3 text-sm leading-6 text-zinc-300">
+              不是做地图导航，而是把高占用目的地、周边可承接点和候选资源核验串成一条保守治理建议。
+            </p>
+          </div>
+	          <div className="grid gap-3 p-4 sm:grid-cols-3">
+	            <article className="rounded-xl border border-orange-200 bg-orange-50 p-4">
+	              <p className="text-xs font-semibold text-orange-700">压力目的地</p>
+	              <p className="mt-2 text-3xl font-semibold text-orange-800">{topPressureLots.length}</p>
+	              <p className="mt-1 text-xs leading-5 text-orange-900">占用率偏高，适合提示 Plan B。</p>
+	            </article>
+            <article className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+              <p className="text-xs font-semibold text-emerald-700">承接备选</p>
+              <p className="mt-2 text-3xl font-semibold text-emerald-800">{diversionScenarios.length}</p>
+              <p className="mt-1 text-xs leading-5 text-emerald-900">距离可接受、余位更稳的诱导方案。</p>
+            </article>
+            <article className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+              <p className="text-xs font-semibold text-blue-700">待核验资源</p>
+	              <p className="mt-2 text-3xl font-semibold text-blue-800">{fieldReadyCount}</p>
+	              <p className="mt-1 text-xs leading-5 text-blue-900">字段较完整，适合进入调研清单。</p>
+	            </article>
+	            <article className="rounded-xl border border-zinc-200 bg-white p-4 sm:col-span-3">
+	              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+	                <div>
+	                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">Nearest vs AI Diversion</p>
+	                  <h3 className="mt-1 text-base font-semibold text-zinc-950">最近策略 vs AI 分流建议</h3>
+	                </div>
+	                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+	                  建议诱导 / 候选承接 / 待核验
+	                </span>
+	              </div>
+	              <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto_1fr] md:items-stretch">
+	                <div className="rounded-xl border border-orange-200 bg-orange-50/80 p-3">
+	                  <p className="text-xs font-semibold text-orange-700">都去最近车场</p>
+	                  <p className="mt-1 text-sm font-semibold text-orange-950">
+	                    {primaryDiversionScenario?.pressureLot?.name || topPressureLots[0]?.name || '等待高峰压力点'}
+	                  </p>
+	                  <p className="mt-1 text-xs leading-5 text-orange-900">
+	                    {primaryDiversionScenario?.pressureLot
+	                      ? `占用 ${primaryDiversionScenario.pressureLot.stats.occupancy}% · 剩余 ${primaryDiversionScenario.pressureLot.stats.available}/${primaryDiversionScenario.pressureLot.stats.total}`
+	                      : '接入更多高峰样本后展示最近策略下的满位风险。'}
+	                  </p>
+	                </div>
+	                <div className="hidden items-center justify-center text-zinc-400 md:flex">→</div>
+	                <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3">
+	                  <p className="text-xs font-semibold text-emerald-700">ParkGov AI 分流</p>
+	                  <p className="mt-1 text-sm font-semibold text-emerald-950">
+	                    {primaryDiversionScenario?.alternative?.lot?.name || '优先核验周边候选资源'}
+	                  </p>
+	                  <p className="mt-1 text-xs leading-5 text-emerald-900">
+	                    {primaryDiversionScenario?.alternative
+	                      ? `可多承接 ${Math.max(primaryDiversionScenario.alternative.availableGain, 0)} 个余位 · 距离 ${formatDistance(primaryDiversionScenario.alternative.distanceMeters)}`
+	                      : `当前有 ${pressureReliefCandidates.length} 个候选资源可进入人工核验，不直接声明真实可停。`}
+	                  </p>
+	                </div>
+	              </div>
+	            </article>
+	          </div>
+	        </div>
+	      </section>
+
       {loading ? (
         <div className="flex min-h-[420px] items-center justify-center rounded-lg border border-slate-200 bg-white">
           <LoadingSpinner text="正在加载治理概览..." />
@@ -851,6 +938,30 @@ const AdminGovernanceOverview = () => {
               <p className="mt-4 text-sm leading-6 text-slate-600">
                 这不是“替代导航”，而是给治理端看的压力分流线索：当正式停车场高占用时，周边候选 POI 可进入人工调研、开放性核验和诱导策略设计。
               </p>
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                <div className="rounded-xl border border-orange-200 bg-orange-50/80 p-4">
+                  <p className="text-xs font-semibold text-orange-700">如果都去最近车场</p>
+                  <p className="mt-2 text-2xl font-semibold text-orange-800">
+                    {topPressureLots[0] ? `${topPressureLots[0].stats.occupancy}%` : '--'}
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-orange-900">
+                    {topPressureLots[0]
+                      ? `${topPressureLots[0].name} 已偏高占用，继续按最近原则会加重到场绕行风险。`
+                      : '等待更多高峰样本后展示最近原则下的压力点。'}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-4">
+                  <p className="text-xs font-semibold text-emerald-700">AI 分流推荐</p>
+                  <p className="mt-2 text-2xl font-semibold text-emerald-800">
+                    {diversionScenarios[0]?.alternative ? `+${Math.max(diversionScenarios[0].alternative.availableGain, 0)}` : pressureReliefCandidates.length}
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-emerald-900">
+                    {diversionScenarios[0]?.alternative
+                      ? `${diversionScenarios[0].alternative.lot.name} 可作为承接备选，先以建议诱导和人工核验方式使用。`
+                      : `当前有 ${pressureReliefCandidates.length} 个候选资源可进入核验，不直接声明真实可用。`}
+                  </p>
+                </div>
+              </div>
               <div className="mt-5 space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-semibold text-slate-950">分流前后对比</p>
@@ -925,6 +1036,86 @@ const AdminGovernanceOverview = () => {
               )}
             </div>
           </div>
+        </section>
+
+        <section className="overflow-hidden rounded-lg border border-amber-200 bg-white">
+          <div className="border-b border-amber-100 bg-amber-50/70 px-5 py-4">
+            <div className="flex items-center gap-2">
+              <ExclamationTriangleIcon className="h-5 w-5 text-amber-800" />
+              <h2 className="font-semibold text-slate-950">高风险目的地与备选承接</h2>
+            </div>
+            <p className="mt-1 text-sm text-slate-600">
+              结合高占用、坐标缺失、收费缺失和数据新鲜度，筛出用户到场风险较高的目的地，便于后续设计备选诱导。
+            </p>
+          </div>
+          {highRiskDestinations.length === 0 ? (
+            <div className="px-5 py-6 text-sm text-slate-500">当前样例没有明显高风险目的地。</div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {highRiskDestinations.slice(0, 5).map((lot) => {
+                const alternatives = Array.isArray(lot.alternatives) ? lot.alternatives.slice(0, 2) : [];
+                const missingFields = [
+                  !lot.has_coordinates ? '坐标' : null,
+                  !lot.has_fee_rule ? '收费' : null,
+                  Number(lot.hours_since_signal || 999) > 24 ? '新鲜数据' : null
+                ].filter(Boolean);
+
+                return (
+                  <article key={lot.id} className="px-5 py-4">
+                    <div className="grid gap-3 md:grid-cols-[1fr_110px_110px_150px] md:items-center">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-semibold text-slate-950">{lot.name}</p>
+                          {lot.decision_status && (
+                            <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
+                              {lot.decision_status === 'keep_backup' ? '保留备选' : lot.decision_status === 'coordinate_missing' ? '坐标待核验' : lot.decision_status === 'demo_only' ? '仅供验证' : '可继续前往'}
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {lot.district || '未知区域'} · 到场保障 {lot.arrival_assurance_score ?? '--'} 分
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-orange-700">{Number(lot.occupancy_rate || 0)}%</p>
+                        <p className="text-xs text-slate-500">占用率</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-emerald-700">{lot.available_slots ?? '--'}</p>
+                        <p className="text-xs text-slate-500">余位</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-800">{lot.risk?.label || '待判断'}</p>
+                        <p className="text-xs text-slate-500">到场风险</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid gap-2 md:grid-cols-2">
+                      <div className="rounded-lg border border-amber-100 bg-amber-50/70 p-3 text-xs leading-5 text-amber-900">
+                        <p className="font-semibold text-amber-950">治理建议</p>
+                        <p className="mt-1">
+                          {lot.suggested_action || `建议优先补齐 ${missingFields.join('、') || '周边备选'}，避免用户到场后继续绕行。`}
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg border border-emerald-100 bg-emerald-50/80 p-3 text-xs leading-5 text-emerald-900">
+                        <p className="font-semibold text-emerald-950">备选承接</p>
+                        {alternatives.length > 0 ? (
+                          <p className="mt-1">
+                            {alternatives.map((candidate, index) => (
+                              `${index === 0 ? 'Plan B' : 'Plan C'}：${candidate.name}（可停 ${candidate.probability}% · 余位 ${candidate.available_slots ?? '--'}）`
+                            )).join('；')}
+                          </p>
+                        ) : (
+                          <p className="mt-1">暂无可承接备选，建议先核验周边候选资源或补充停车场坐标。</p>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {peakHours.length > 0 && (
@@ -1048,6 +1239,9 @@ const AdminGovernanceOverview = () => {
                             {advice.label}
                           </span>
                           <p className="mt-2 max-w-xs text-xs leading-5 text-slate-500">{advice.detail}</p>
+                          <p className="mt-2 max-w-xs rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs leading-5 text-slate-600">
+                            {getCandidateResearchReason({ nearestLot, missingFields, completeness, advice })}
+                          </p>
                         </td>
                         <td className="px-5 py-4">
                           <div className="min-w-[220px] space-y-2">

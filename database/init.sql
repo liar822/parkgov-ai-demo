@@ -149,6 +149,24 @@ CREATE TABLE IF NOT EXISTS bookings (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Create arrival_intents table for demo arrival assurance plans.
+-- These records do not reserve a real slot and do not trigger payment.
+CREATE TABLE IF NOT EXISTS arrival_intents (
+    id SERIAL PRIMARY KEY,
+    display_code VARCHAR(64) UNIQUE NOT NULL,
+    parking_lot_id INTEGER REFERENCES parking_lots(id) ON DELETE SET NULL,
+    estimated_arrival_minutes INTEGER NOT NULL,
+    expected_duration_minutes INTEGER NOT NULL,
+    status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'expired', 'cancelled')),
+    lot_snapshot JSONB NOT NULL,
+    reference_location JSONB DEFAULT '{}'::jsonb,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    disclaimer TEXT NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create parking_analytics table for historical data
 CREATE TABLE IF NOT EXISTS parking_analytics (
     id SERIAL PRIMARY KEY,
@@ -220,6 +238,10 @@ CREATE INDEX IF NOT EXISTS idx_bookings_slot_id ON bookings(parking_slot_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
 CREATE INDEX IF NOT EXISTS idx_bookings_start ON bookings(booking_start);
 
+CREATE INDEX IF NOT EXISTS idx_arrival_intents_lot_id ON arrival_intents(parking_lot_id);
+CREATE INDEX IF NOT EXISTS idx_arrival_intents_status ON arrival_intents(status);
+CREATE INDEX IF NOT EXISTS idx_arrival_intents_expires_at ON arrival_intents(expires_at);
+
 CREATE INDEX IF NOT EXISTS idx_analytics_lot_date ON parking_analytics(parking_lot_id, date);
 CREATE INDEX IF NOT EXISTS idx_analytics_date_hour ON parking_analytics(date, hour);
 
@@ -270,6 +292,11 @@ CREATE TRIGGER update_parking_slot_rois_updated_at
 DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at 
     BEFORE UPDATE ON users 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_arrival_intents_updated_at ON arrival_intents;
+CREATE TRIGGER update_arrival_intents_updated_at
+    BEFORE UPDATE ON arrival_intents
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Insert sample data

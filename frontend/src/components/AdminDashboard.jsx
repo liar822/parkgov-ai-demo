@@ -13,6 +13,7 @@ import {
   Map,
   ParkingCircle,
   RefreshCw,
+  ShieldCheck,
   Signal,
   UploadCloud,
   Video
@@ -65,6 +66,37 @@ const formatPercent = (value) => {
   return `${Math.round(numericValue * 10) / 10}%`;
 };
 
+const getArrivalIntentState = (intent) => {
+  const expiresAt = intent?.expires_at ? new Date(intent.expires_at).getTime() : null;
+  const expired = intent?.status === 'expired' || (expiresAt !== null && expiresAt <= Date.now());
+  const shouldSwitch = Boolean(intent?.switch_recommendation?.should_switch);
+
+  if (expired) {
+    return {
+      label: '已过期',
+      tone: 'border-zinc-200 bg-zinc-50 text-zinc-600',
+      dot: 'bg-zinc-400',
+      priority: 0
+    };
+  }
+
+  if (shouldSwitch) {
+    return {
+      label: '建议换备选',
+      tone: 'border-amber-200 bg-amber-50 text-amber-800',
+      dot: 'bg-amber-500',
+      priority: 2
+    };
+  }
+
+  return {
+    label: '出发中',
+    tone: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    dot: 'bg-emerald-500',
+    priority: 1
+  };
+};
+
 const sourceLabels = {
   campus_demo: '校园试点 demo',
   campus_camera: '校园样例视频',
@@ -85,6 +117,8 @@ const AdminDashboard = () => {
   const [operations, setOperations] = useState([]);
   const [governanceSummary, setGovernanceSummary] = useState(null);
   const [inferenceEvents, setInferenceEvents] = useState([]);
+  const [arrivalIntents, setArrivalIntents] = useState([]);
+  const [arrivalIntentSummary, setArrivalIntentSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showVideoUpload, setShowVideoUpload] = useState(false);
@@ -105,7 +139,8 @@ const AdminDashboard = () => {
         sourcesResponse,
         operationsResponse,
         governanceResponse,
-        inferenceResponse
+        inferenceResponse,
+        arrivalIntentResponse
       ] = await Promise.allSettled([
         adminService.getSystemAnalytics(7),
         videoService.getRecentAnalyses(8),
@@ -113,7 +148,8 @@ const AdminDashboard = () => {
         adminService.getDataSources(),
         adminService.getParkingOperations(),
         adminService.getGovernanceSummary(),
-        adminService.getInferenceEvents({ limit: 8 })
+        adminService.getInferenceEvents({ limit: 8 }),
+        adminService.getArrivalIntents({ limit: 8 })
       ]);
 
       if (analyticsResponse.status === 'fulfilled' && analyticsResponse.value.data?.success) {
@@ -137,6 +173,10 @@ const AdminDashboard = () => {
       if (inferenceResponse.status === 'fulfilled' && inferenceResponse.value.data?.success) {
         setInferenceEvents(inferenceResponse.value.data.data.inference_events || []);
       }
+      if (arrivalIntentResponse.status === 'fulfilled' && arrivalIntentResponse.value.data?.success) {
+        setArrivalIntents(arrivalIntentResponse.value.data.data.arrival_intents || []);
+        setArrivalIntentSummary(arrivalIntentResponse.value.data.data.summary || null);
+      }
 
       const rejected = [
         analyticsResponse,
@@ -145,7 +185,8 @@ const AdminDashboard = () => {
         sourcesResponse,
         operationsResponse,
         governanceResponse,
-        inferenceResponse
+        inferenceResponse,
+        arrivalIntentResponse
       ].filter((response) => response.status === 'rejected');
 
       if (rejected.length > 0) {
@@ -228,6 +269,26 @@ const AdminDashboard = () => {
     };
   }, [operations]);
 
+  const arrivalIntentMonitor = useMemo(() => {
+    const enriched = arrivalIntents.map((intent) => ({
+      ...intent,
+      monitorState: getArrivalIntentState(intent)
+    }));
+    const active = enriched.filter((intent) => intent.status === 'active' && !getArrivalIntentState(intent).label.includes('过期')).length;
+    const switchNeeded = enriched.filter((intent) => intent.switch_recommendation?.should_switch).length;
+    const averageProbability = enriched.length > 0
+      ? Math.round(enriched.reduce((sum, intent) => sum + Number(intent.current_assurance?.probability ?? intent.lot_snapshot?.probability ?? 0), 0) / enriched.length)
+      : 0;
+    const ordered = [...enriched].sort((first, second) => second.monitorState.priority - first.monitorState.priority);
+
+    return {
+      active,
+      switchNeeded,
+      averageProbability,
+      records: ordered
+    };
+  }, [arrivalIntents]);
+
   const readinessItems = useMemo(() => {
     const p0Sources = dataSources.filter((source) => source.priority === 'P0');
     const completedP0 = p0Sources.filter((source) => source.latest_import_status === 'completed').length;
@@ -284,8 +345,8 @@ const AdminDashboard = () => {
   const demoJourneyActions = [
     {
       step: '01',
-      title: '用户怎么停',
-      detail: '打开停车服务页，看系统如何在最近、余位、拥挤度和数据可信度之间做分流推荐。',
+      title: '生成到场计划',
+      detail: '打开停车服务页，看推荐车场、可停概率、Plan B 和演示到场码如何形成出发前保障。',
       href: '/parking-lots',
       icon: ParkingCircle
     },
@@ -299,14 +360,14 @@ const AdminDashboard = () => {
     {
       step: '03',
       title: '管理端怎么看',
-      detail: '核验停车场占用率、ROI 覆盖、摄像头/样例源状态和异常提示。',
+      detail: '核验停车场占用率、ROI 覆盖、最近 AI 信号和到场保障质量，解释哪些场站不稳。',
       href: '/admin/status',
       icon: Signal
     },
     {
       step: '04',
       title: '治理端怎么分流',
-      detail: '查看高占用区域、候选资源核验和“建议诱导/建议补数据”的保守治理建议。',
+      detail: '查看高风险目的地、Plan B/Plan C 承接点和“建议诱导/建议补数据”的保守治理建议。',
       href: '/admin/governance',
       icon: Map
     }
@@ -398,7 +459,7 @@ const AdminDashboard = () => {
             </p>
           </div>
           <span className="inline-flex w-fit rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-            用户服务 → AI 证据 → 运维状态 → 治理分流
+            到场计划 → AI 写回 → 风险变化 → 备选承接
           </span>
         </div>
         <div className="grid divide-y divide-zinc-100 lg:grid-cols-4 lg:divide-x lg:divide-y-0">
@@ -421,6 +482,86 @@ const AdminDashboard = () => {
             );
           })}
         </div>
+      </section>
+
+      <section className="overflow-hidden rounded-lg border border-emerald-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-emerald-100 bg-emerald-50/70 px-5 py-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-emerald-700" />
+              <h2 className="font-semibold text-zinc-950">到场计划监控</h2>
+            </div>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-emerald-900">
+              观察用户端生成的演示到场码是否仍然稳妥；这里只做试点监控，不代表真实预约或锁位。
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center text-xs lg:w-[360px]">
+            <div className="rounded-lg border border-emerald-200 bg-white px-3 py-2">
+              <p className="font-semibold text-zinc-950">{arrivalIntentSummary?.active ?? arrivalIntentMonitor.active}</p>
+              <p className="mt-1 text-zinc-500">活跃计划</p>
+            </div>
+            <div className="rounded-lg border border-amber-200 bg-white px-3 py-2">
+              <p className="font-semibold text-amber-700">{arrivalIntentMonitor.switchNeeded}</p>
+              <p className="mt-1 text-zinc-500">需看备选</p>
+            </div>
+            <div className="rounded-lg border border-zinc-200 bg-white px-3 py-2">
+              <p className="font-semibold text-zinc-950">{arrivalIntentMonitor.averageProbability}%</p>
+              <p className="mt-1 text-zinc-500">平均可停</p>
+            </div>
+          </div>
+        </div>
+
+        {arrivalIntentMonitor.records.length === 0 ? (
+          <div className="px-5 py-6 text-sm text-zinc-500">
+            暂无到场计划。用户端生成到场码后，这里会显示计划状态、余位变化和 Plan B 建议。
+          </div>
+        ) : (
+          <div className="divide-y divide-zinc-100">
+            {arrivalIntentMonitor.records.slice(0, 5).map((intent) => {
+              const snapshot = intent.lot_snapshot || {};
+              const current = intent.current_assurance || {};
+              const delta = intent.snapshot_delta || {};
+              const alternatives = Array.isArray(intent.alternatives) ? intent.alternatives.slice(0, 2) : [];
+
+              return (
+                <article key={intent.display_code} className="grid gap-3 px-5 py-4 lg:grid-cols-[minmax(0,1fr)_120px_130px_180px] lg:items-center">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold ${intent.monitorState.tone}`}>
+                        <span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${intent.monitorState.dot}`} />
+                        {intent.monitorState.label}
+                      </span>
+                      <span className="break-all text-xs font-semibold text-emerald-700">{intent.display_code}</span>
+                    </div>
+                    <p className="mt-2 truncate text-sm font-semibold text-zinc-950">
+                      {intent.parking_lot_name || snapshot.name || '停车场'}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-zinc-500">
+                      {intent.switch_recommendation?.reason || '当前风险未明显升高，可继续观察到场状态。'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-950">{current.probability ?? snapshot.probability ?? '--'}%</p>
+                    <p className="text-xs text-zinc-500">当前可停</p>
+                  </div>
+                  <div>
+                    <p className={`text-sm font-semibold ${Number(delta.available_slots_delta || 0) < 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
+                      {delta.available_slots_delta === undefined || delta.available_slots_delta === null
+                        ? '--'
+                        : `${Number(delta.available_slots_delta) >= 0 ? '+' : ''}${delta.available_slots_delta}`}
+                    </p>
+                    <p className="text-xs text-zinc-500">较生成时余位</p>
+                  </div>
+                  <div className="text-xs leading-5 text-zinc-600">
+                    {alternatives.length > 0
+                      ? alternatives.map((lot, index) => `${index === 0 ? 'Plan B' : 'Plan C'}：${lot.name} ${lot.probability}%`).join('；')
+                      : '暂无备选承接点'}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">

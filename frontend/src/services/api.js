@@ -135,6 +135,18 @@ export const parkingService = {
     return api.get(`/parking/status/${lotId}`);
   },
 
+  async getRecommendations(params = {}) {
+    return api.get('/parking/recommendations', { params });
+  },
+
+  async createArrivalIntent(payload) {
+    return api.post('/parking/arrival-intents', payload);
+  },
+
+  async getArrivalIntent(displayCode) {
+    return api.get(`/parking/arrival-intents/${encodeURIComponent(displayCode)}`);
+  },
+
   async getAvailableSlots(lotId) {
     return api.get(`/parking/available-slots/${lotId}`);
   },
@@ -295,6 +307,14 @@ export const adminService = {
 
   async getGovernanceSummary(params = {}) {
     return api.get('/admin/governance/summary', { params });
+  },
+
+  async getArrivalIntents(params = {}) {
+    return api.get('/admin/arrival-intents', { params });
+  },
+
+  async expireArrivalIntents() {
+    return api.post('/admin/arrival-intents/expire');
   },
 
   async getSystemConfiguration() {

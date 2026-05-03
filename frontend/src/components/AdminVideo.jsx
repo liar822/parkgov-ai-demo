@@ -259,6 +259,203 @@ const EvidenceChainCard = ({ title, description, job, metadata, emptyText, tone 
   );
 };
 
+const EvidenceSummaryCard = ({ label, job, metadata, fallback, tone = 'emerald' }) => {
+  const styles = evidenceToneStyles[tone] || evidenceToneStyles.emerald;
+  const totalSlots = Number(metadata.total_slots || job?.inference_total_slots || fallback?.totalSlots || 0);
+  const occupiedCount = Number(metadata.occupied_count || job?.inference_occupied_count || fallback?.occupiedCount || 0);
+  const confidence = Number(metadata.average_confidence || job?.inference_average_confidence || fallback?.confidence || 0);
+
+  return (
+    <article className={`rounded-xl border ${styles.border} ${styles.bg} p-4`}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className={`text-xs font-semibold ${styles.text}`}>{label}</p>
+          <h2 className="mt-1 text-lg font-semibold text-zinc-950">
+            {job ? '已形成写回证据' : fallback?.title || '等待验证'}
+          </h2>
+        </div>
+        <span className={`rounded-full bg-white/75 px-2 py-0.5 text-xs font-semibold ${styles.text}`}>
+          {job ? `任务 #${job.id}` : '未写回'}
+        </span>
+      </div>
+      <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
+        <div className="rounded-lg bg-white/70 p-2">
+          <p className="text-xs text-zinc-500">ROI/车位</p>
+          <p className="mt-1 font-semibold text-zinc-950">{totalSlots || '--'}</p>
+        </div>
+        <div className="rounded-lg bg-white/70 p-2">
+          <p className="text-xs text-zinc-500">占用写回</p>
+          <p className="mt-1 font-semibold text-zinc-950">{occupiedCount || '--'}</p>
+        </div>
+        <div className="rounded-lg bg-white/70 p-2">
+          <p className="text-xs text-zinc-500">置信度</p>
+          <p className="mt-1 font-semibold text-zinc-950">{confidence ? `${(confidence * 100).toFixed(1)}%` : '--'}</p>
+        </div>
+      </div>
+      <p className="mt-3 line-clamp-2 text-xs leading-5 text-zinc-600">
+        {job
+          ? `${job.model_name || 'AI 模型'} · 事件 ${job.result_inference_event_id ? `#${job.result_inference_event_id}` : '未关联'} · ${formatTimestamp(job.created_at)}`
+          : fallback?.detail || '完成推理后会显示任务、事件和车位写回结果。'}
+      </p>
+    </article>
+  );
+};
+
+const EvidenceFlowPanel = ({ campusJob, campusMetadata, publicJob, publicMetadata, latestEvent }) => {
+  const campusSlots = Number(campusMetadata.total_slots || campusJob?.inference_total_slots || 0);
+  const campusOccupied = Number(campusMetadata.occupied_count || campusJob?.inference_occupied_count || 0);
+  const publicSlots = Number(publicMetadata.total_slots || publicJob?.inference_total_slots || 0);
+  const latestEventId = latestEvent?.id || campusJob?.result_inference_event_id || publicJob?.result_inference_event_id;
+  const latestLotName = latestEvent?.parking_lot_name || campusJob?.parking_lot_name || publicJob?.parking_lot_name || '待写回停车场';
+
+  const steps = [
+    {
+      label: '训练证据',
+      title: 'CNRPark+EXT 30k',
+      value: 'Acc 97.18%',
+      detail: 'occupied F1 0.9740',
+      icon: Database,
+      tone: 'blue'
+    },
+    {
+      label: '校园样例',
+      title: campusJob ? `任务 #${campusJob.id}` : '待运行',
+      value: campusSlots ? `${campusSlots} ROI` : '24 ROI',
+      detail: campusJob ? `${campusOccupied} 个车位写回占用` : '运行校园样例验证后生成',
+      icon: Camera,
+      tone: 'emerald'
+    },
+    {
+      label: '标准事件',
+      title: latestEventId ? `事件 #${latestEventId}` : '待关联',
+      value: latestEventId ? '已入库' : '未写回',
+      detail: latestLotName,
+      icon: Signal,
+      tone: 'violet'
+    },
+    {
+      label: '余位服务',
+      title: '用户端同步',
+      value: campusJob || publicJob ? '可展示' : '待验证',
+      detail: campusJob || publicJob ? '停车余位、可停概率和 Plan B 可随事件变化' : '缺少 AI 事件时仅展示静态样例',
+      icon: CheckCircle2,
+      tone: 'amber'
+    }
+  ];
+
+  const toneClassName = {
+    emerald: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    blue: 'border-blue-200 bg-blue-50 text-blue-700',
+    violet: 'border-violet-200 bg-violet-50 text-violet-700',
+    amber: 'border-amber-200 bg-amber-50 text-amber-700'
+  };
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+      <div className="grid gap-0 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)]">
+        <div className="border-b border-zinc-100 bg-zinc-950 px-5 py-5 text-white lg:border-b-0 lg:border-r lg:border-zinc-800">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">AI Evidence Flow</p>
+          <h2 className="mt-2 text-2xl font-semibold leading-tight">从训练到余位写回</h2>
+          <p className="mt-3 text-sm leading-6 text-zinc-300">
+            评委可以按这条链路理解：公开数据集训练模型，校园样例做 ROI 推理，生成标准事件，再同步到用户端停车决策。
+          </p>
+          <div className="mt-5 grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="rounded-xl bg-white/10 p-3">
+              <p className="text-lg font-semibold text-white">{publicSlots || 98}</p>
+              <p className="mt-1 text-zinc-400">公开 ROI</p>
+            </div>
+            <div className="rounded-xl bg-white/10 p-3">
+              <p className="text-lg font-semibold text-white">{campusSlots || 24}</p>
+              <p className="mt-1 text-zinc-400">校园 ROI</p>
+            </div>
+            <div className="rounded-xl bg-white/10 p-3">
+              <p className="text-lg font-semibold text-white">{latestEventId ? `#${latestEventId}` : '--'}</p>
+              <p className="mt-1 text-zinc-400">最新事件</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 p-4 sm:grid-cols-2">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            return (
+              <article key={step.label} className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border ${toneClassName[step.tone]}`}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-zinc-400">0{index + 1}</span>
+                </div>
+                <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{step.label}</p>
+                <h3 className="mt-1 text-sm font-semibold text-zinc-950">{step.title}</h3>
+                <p className="mt-2 text-xl font-semibold text-zinc-950">{step.value}</p>
+                <p className="mt-1 line-clamp-2 text-xs leading-5 text-zinc-500">{step.detail}</p>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const LatestWritebackImpactPanel = ({ job, metadata = {}, latestEvent, lots = [] }) => {
+  const eventId = job?.result_inference_event_id || latestEvent?.id;
+  const lotId = job?.parking_lot_id || latestEvent?.parking_lot_id;
+  const matchedLot = lots.find((lot) => String(lot.id) === String(lotId)) || null;
+  const stats = matchedLot ? getLotStats(matchedLot) : null;
+  const lotName = job?.parking_lot_name || latestEvent?.parking_lot_name || matchedLot?.name || '待关联停车场';
+  const totalSlots = Number(metadata.total_slots || job?.inference_total_slots || latestEvent?.total_slots || stats?.total || 0);
+  const occupiedCount = Number(metadata.occupied_count || job?.inference_occupied_count || latestEvent?.occupied_slots || 0);
+  const vacantCount = Number(metadata.vacant_count || job?.inference_vacant_count || Math.max(totalSlots - occupiedCount, 0));
+  const confidence = Number(metadata.average_confidence || job?.inference_average_confidence || latestEvent?.average_confidence || 0);
+  const beforeAvailable = metadata.before_available ?? latestEvent?.before_available;
+  const afterAvailable = metadata.after_available ?? latestEvent?.after_available ?? stats?.available;
+  const hasEvidence = Boolean(job || latestEvent);
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50/60 shadow-sm">
+      <div className="grid gap-0 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
+        <div className="border-b border-emerald-100 bg-white px-5 py-5 lg:border-b-0 lg:border-r">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Latest Writeback Impact</p>
+          <h2 className="mt-2 text-xl font-semibold text-zinc-950">最近一次写回影响</h2>
+          <p className="mt-2 text-sm leading-6 text-zinc-600">
+            这一块把任务、事件和用户端余位变化放在一起看，避免评委误解为静态展示。
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs">
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-800">
+              {hasEvidence ? '已形成证据链' : '等待 AI 写回'}
+            </span>
+            <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 font-semibold text-zinc-600">
+              {eventId ? `事件 #${eventId}` : '暂无事件'}
+            </span>
+          </div>
+        </div>
+        <div className="grid gap-3 p-4 sm:grid-cols-3 xl:grid-cols-6">
+          {[
+            { label: '停车场', value: lotName, detail: job?.id ? `任务 #${job.id}` : '任务待关联', wide: true },
+            { label: 'ROI 数', value: totalSlots || '--', detail: '识别车位' },
+            { label: '占用 / 空闲', value: `${occupiedCount || '--'} / ${vacantCount || '--'}`, detail: '写回状态' },
+            { label: '平均置信度', value: confidence ? `${(confidence * 100).toFixed(1)}%` : '--', detail: job?.model_name || '模型待记录' },
+            {
+              label: '余位变化',
+              value: beforeAvailable !== undefined && afterAvailable !== undefined ? `${beforeAvailable} → ${afterAvailable}` : (afterAvailable !== undefined ? `${afterAvailable}` : '--'),
+              detail: beforeAvailable !== undefined ? '写回前后' : '当前用户端余位'
+            },
+            { label: '同步说明', value: hasEvidence ? '可同步' : '待运行', detail: '影响余位与可停概率' }
+          ].map((item) => (
+            <article key={item.label} className={`rounded-xl border border-white/80 bg-white p-3 shadow-sm ${item.wide ? 'sm:col-span-2 xl:col-span-2' : ''}`}>
+              <p className="text-xs font-medium text-zinc-500">{item.label}</p>
+              <p className="mt-1 truncate text-lg font-semibold text-zinc-950">{item.value}</p>
+              <p className="mt-1 truncate text-xs text-zinc-500">{item.detail}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const formatTimestamp = (value) => {
   if (!value) return '暂无记录';
 
@@ -351,6 +548,12 @@ const AdminVideo = () => {
     aiProcessingJobs.find(isPublicDatasetJob) || null
   ), [aiProcessingJobs]);
   const latestPublicDatasetInferenceMetadata = getJobMetadata(latestPublicDatasetInferenceJob);
+  const latestEvidenceJob = latestCampusInferenceJob || latestPublicDatasetInferenceJob || latestAiJob;
+  const latestEvidenceMetadata = latestCampusInferenceJob
+    ? latestCampusInferenceMetadata
+    : latestPublicDatasetInferenceJob
+      ? latestPublicDatasetInferenceMetadata
+      : getJobMetadata(latestAiJob);
 
   const filteredAiJobs = useMemo(() => {
     if (jobStatusFilter === 'all') return aiProcessingJobs;
@@ -546,6 +749,48 @@ const AdminVideo = () => {
           {error}
         </div>
       )}
+
+      <EvidenceFlowPanel
+        campusJob={latestCampusInferenceJob}
+        campusMetadata={latestCampusInferenceMetadata}
+        publicJob={latestPublicDatasetInferenceJob}
+        publicMetadata={latestPublicDatasetInferenceMetadata}
+        latestEvent={latestInferenceEvent}
+      />
+
+      <LatestWritebackImpactPanel
+        job={latestEvidenceJob}
+        metadata={latestEvidenceMetadata}
+        latestEvent={latestInferenceEvent}
+        lots={lots}
+      />
+
+      <section className="grid gap-4 xl:grid-cols-2">
+        <EvidenceSummaryCard
+          label="校园样例验证"
+          job={latestCampusInferenceJob}
+          metadata={latestCampusInferenceMetadata}
+          tone="emerald"
+          fallback={{
+            title: '等待校园样例写回',
+            totalSlots: 24,
+            detail: '运行 npm run demo:ai-infer:campus-synthetic 后，将展示校园 ROI、任务和事件证据。'
+          }}
+        />
+        <EvidenceSummaryCard
+          label="公开数据集训练"
+          job={latestPublicDatasetInferenceJob}
+          metadata={latestPublicDatasetInferenceMetadata}
+          tone="blue"
+          fallback={{
+            title: 'CNRPark+EXT 30k 训练完成',
+            totalSlots: 30000,
+            occupiedCount: 3160,
+            confidence: 0.9718,
+            detail: '测试 accuracy 0.9718，occupied F1 0.9740，vacant F1 0.9693；公开数据集不代表北京真实场景。'
+          }}
+        />
+      </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {[

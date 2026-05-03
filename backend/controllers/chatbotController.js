@@ -128,6 +128,12 @@ class ChatbotController {
     
     const intents = [
       {
+        name: 'arrival_assurance',
+        keywords: ['arrival', 'risk', 'backup', 'alternative', 'arrive', 'plan b', 'planb', '到场', '还有位', '风险', '备选', '到场码', '到场计划', '现在过去', '稳不稳', '稳吗'],
+        patterns: [/现在.*过去.*有.*位/, /到.*还有.*位/, /为什么.*风险.*高/, /有没有.*备选/, /有没有.*plan\s*b/i, /到场码.*用/, /到场.*计划/],
+        entities: ['lot_name']
+      },
+      {
         name: 'find_parking',
         keywords: ['find', 'available', 'vacant', 'empty', 'search', 'look for', 'where', 'yes', 'sure', 'ok', 'okay', '车位', '停车', '哪里', '去哪', '推荐', '空位', '余位'],
         patterns: [/find.*parking/, /available.*slot/, /where.*park/, /^(yes|yeah|sure|ok|okay)$/, /哪里.*停/, /推荐.*停车/, /还有.*车位/],
@@ -345,7 +351,12 @@ class ChatbotController {
     const summary = context?.summary || {};
     const selectedLot = context?.selectedLot || null;
     const recommendedLot = context?.recommendedLot || null;
+    const alternatives = Array.isArray(context?.alternatives) ? context.alternatives : [];
+    const activeArrivalIntent = context?.activeArrivalIntent || null;
     const activeLot = selectedLot || recommendedLot;
+    const alternativeLine = alternatives.length > 0
+      ? alternatives.slice(0, 2).map((lot) => `${lot.rank || 'Plan'}：${lot.name}，剩余 ${lot.available ?? '--'} 个，可停 ${lot.arrivalProbability ?? '--'}%，距离 ${lot.distance || '待核验'}`).join('\n')
+      : '当前还没有明确 Plan B。可以先查看页面里的 AI 推荐卡或地图备选点。';
     const lotLine = (lot) => {
       if (!lot) return '当前还没有选中的停车场。';
       return `${lot.name}：剩余 ${lot.available ?? '未知'} / ${lot.total ?? '未知'} 个车位，占用率 ${lot.occupancy ?? '未知'}%，距离 ${lot.distance || '待核验'}，来源为 ${lot.sourceLabel || lot.sourceType || '演示数据'}。`;
@@ -358,6 +369,12 @@ class ChatbotController {
           ? `我建议先看“${recommendedLot.name}”。\n\n${lotLine(recommendedLot)}\n推荐依据：${recommendedLot.reason || '综合余位、距离、拥挤度、收费完整度和数据来源计算'}。\n\n${boundary}`
           : `当前列表里暂时没有可推荐停车场。可以尝试清空搜索条件或切换数据来源。\n\n${boundary}`,
         actions: ['show_availability', 'view_map']
+      },
+      arrival_assurance: {
+        text: activeLot
+          ? `按当前演示数据看，${activeLot.name} 的到场判断如下：\n\n${lotLine(activeLot)}\n可停概率：${activeLot.arrivalProbability ?? '待计算'}%，到场风险：${activeLot.arrivalRisk || '待判断'}，预计到达：${activeLot.arrivalEtaMinutes ? `${activeLot.arrivalEtaMinutes} 分钟` : '待核验'}。\n\n备选方案：\n${alternativeLine}\n\n${activeArrivalIntent ? `当前到场码 ${activeArrivalIntent.code}：可停概率 ${activeArrivalIntent.currentProbability ?? '待同步'}%，余位较生成时变化 ${activeArrivalIntent.availableDelta ?? '--'}；${activeArrivalIntent.shouldSwitch ? `建议查看备选 ${activeArrivalIntent.suggestedLot || 'Plan B'}。` : '暂不需要切换备选。'}\n\n` : ''}如果风险偏高，建议优先看页面里的 Plan B / Plan C 备选停车场。到场码只是演示凭证：不锁位、不扣款、不代表真实预约，用来展示“行前决策 + 到场凭证 + 后台可追踪”的闭环。\n\n${boundary}`
+          : `到场保障回答的是“我现在过去，到那儿还有没有位”。页面会综合余位、距离、数据新鲜度、AI/开放数据来源和坐标完整度，给出可停概率、风险和备选方案。\n\n${boundary}`,
+        actions: ['view_arrival_plan', 'view_backup_lots']
       },
       show_availability: {
         text: `当前演示范围内共有 ${summary.totalLots ?? '若干'} 个停车场、${summary.totalSpaces ?? '若干'} 个车位，剩余 ${summary.availableSpaces ?? '若干'} 个车位，平均占用约 ${summary.averageOccupancy ?? '未知'}%。\n\n${lotLine(activeLot)}\n\n建议优先选择余位充足、占用率较低、收费规则明确且坐标已核验的停车场。`,
@@ -448,10 +465,16 @@ class ChatbotController {
         '推荐哪个停车场？',
         '查看当前余位'
       ],
+      arrival_assurance: [
+        '现在过去稳不稳？',
+        '有没有 Plan B？',
+        '为什么建议换备选？',
+        '到场码有什么用？'
+      ],
       recommendation_logic: [
         '为什么推荐这里？',
         '为什么不是最近的？',
-        '推荐分怎么算？'
+        '有没有更稳的备选？'
       ],
       gaode_difference: [
         '和高德停车有什么不同？',
@@ -505,9 +528,9 @@ class ChatbotController {
         'API 怎么检查？'
       ],
       general: [
-        '哪里还有车位？',
-        '为什么推荐这个？',
-        '和高德有什么区别？',
+        '我现在过去还有位吗？',
+        '有没有备选车场？',
+        '怎么导航过去？',
         '数据来源是什么？'
       ],
       show_availability: [

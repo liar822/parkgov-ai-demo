@@ -174,7 +174,8 @@ const getAlertLabel = (code) => {
     no_inference_event: '无 AI 事件',
     stale_inference: '识别过期',
     offline_camera_source: '视频源离线',
-    open_data_stale: '开放数据过期'
+    open_data_stale: '开放数据过期',
+    arrival_assurance_low: '保障偏低'
   };
 
   return labels[code] || code;
@@ -355,7 +356,8 @@ const AdminLotStatus = () => {
         alertLots: Number(operations.summary.high_occupancy_lots || 0),
         configuredVideoSources: cameraSources.length,
         staleInferenceLots: Number(operations.summary.stale_inference_lots || 0),
-        lowRoiCoverageLots: Number(operations.summary.low_roi_coverage_lots || 0)
+        lowRoiCoverageLots: Number(operations.summary.low_roi_coverage_lots || 0),
+        averageArrivalAssuranceScore: Math.round(Number(operations.summary.average_arrival_assurance_score || 0))
       };
     }
 
@@ -378,7 +380,8 @@ const AdminLotStatus = () => {
         alertLots: 0,
         configuredVideoSources: 0,
         staleInferenceLots: 0,
-        lowRoiCoverageLots: 0
+        lowRoiCoverageLots: 0,
+        averageArrivalAssuranceScore: 0
       }
     );
   }, [lots, cameraSources, operations.summary]);
@@ -418,7 +421,7 @@ const AdminLotStatus = () => {
         </button>
       </div>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-medium uppercase text-zinc-500">Managed Lots</p>
           <p className="mt-2 text-3xl font-semibold text-zinc-950">{summary.totalLots}</p>
@@ -445,6 +448,13 @@ const AdminLotStatus = () => {
           <p className="text-xs font-medium uppercase text-zinc-500">Sources</p>
           <p className="mt-2 text-3xl font-semibold text-zinc-950">{summary.configuredVideoSources}</p>
           <p className="mt-1 text-xs text-zinc-500">视频/样例数据源</p>
+        </div>
+        <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase text-zinc-500">Assurance</p>
+          <p className={`mt-2 text-3xl font-semibold ${summary.averageArrivalAssuranceScore < 60 ? 'text-orange-700' : 'text-emerald-700'}`}>
+            {summary.averageArrivalAssuranceScore || '--'}
+          </p>
+          <p className="mt-1 text-xs text-zinc-500">到场保障均分</p>
         </div>
       </section>
 
@@ -708,6 +718,69 @@ const AdminLotStatus = () => {
                   <p className="mt-1 text-sm text-slate-500">
                     包含 CSV 导入或车位状态变更时间。
                   </p>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 bg-white p-4 xl:col-span-4">
+                  <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                    <Database className="h-5 w-5 text-emerald-700" />
+                    到场保障质量
+                  </div>
+                  <div className="mt-3 grid gap-3 md:grid-cols-[160px_minmax(0,1fr)]">
+                    <div>
+                      <p className={`text-3xl font-semibold ${Number(selectedOperation?.arrival_assurance?.quality_score || 0) < 60 ? 'text-orange-700' : 'text-emerald-700'}`}>
+                        {selectedOperation?.arrival_assurance?.quality_score ?? '--'}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-500">
+                        {selectedOperation?.arrival_assurance?.quality_label || '待评估'}
+                      </p>
+                    </div>
+                    <div className="grid gap-2 text-sm sm:grid-cols-3">
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <p className="text-xs text-slate-500">推荐可停</p>
+                        <p className="mt-1 font-semibold text-slate-950">
+                          {selectedOperation?.arrival_assurance?.recommendation_probability === null || selectedOperation?.arrival_assurance?.recommendation_probability === undefined
+                            ? '待计算'
+                            : `${selectedOperation.arrival_assurance.recommendation_probability}%`}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <p className="text-xs text-slate-500">数据新鲜度</p>
+                        <p className="mt-1 font-semibold text-slate-950">
+                          {selectedOperation?.arrival_assurance?.signal_age_hours === null || selectedOperation?.arrival_assurance?.signal_age_hours === undefined
+                            ? '暂无'
+                            : `${selectedOperation.arrival_assurance.signal_age_hours} 小时`}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <p className="text-xs text-slate-500">到场风险</p>
+                        <p className="mt-1 font-semibold text-slate-950">
+                          {selectedOperation?.arrival_assurance?.risk?.label || '待判断'}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <p className="text-xs text-slate-500">坐标/导航</p>
+                        <p className="mt-1 font-semibold text-slate-950">
+                          {selectedOperation?.arrival_assurance?.has_coordinates ? '已具备' : '待核验'}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <p className="text-xs text-slate-500">收费规则</p>
+                        <p className="mt-1 font-semibold text-slate-950">
+                          {selectedOperation?.arrival_assurance?.has_fee_rule ? '已标注' : '待补充'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  {selectedOperation?.arrival_assurance?.alternatives?.length > 0 && (
+                    <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-sm text-emerald-900">
+                      备选承接：{selectedOperation.arrival_assurance.alternatives.slice(0, 2).map((candidate) => `${candidate.name}（可停 ${candidate.probability}%）`).join('、')}。
+                    </div>
+                  )}
+                  {selectedOperation?.arrival_assurance?.missing_fields?.length > 0 && (
+                    <p className="mt-3 text-sm text-slate-500">
+                      待补字段：{selectedOperation.arrival_assurance.missing_fields.join('、')}。这些字段会影响用户端可停概率和到场风险。
+                    </p>
+                  )}
                 </div>
               </div>
 

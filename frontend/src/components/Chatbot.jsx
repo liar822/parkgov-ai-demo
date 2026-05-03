@@ -25,15 +25,14 @@ const Chatbot = ({ isOpen, onClose, context = null }) => {
       const welcomeMessage = {
         id: Date.now(),
         type: 'bot',
-        content: "你好，我是 ParkGov Agent。可以帮你找更合适的停车场、解释推荐分流理由、说明和高德停车的差异，也会提醒哪些内容只是 demo 或公开数据样例。",
+        content: "你好，我是 ParkGov Agent。我会围绕当前 AI 首选、Plan B、到场守护和外部导航，帮你判断现在去哪停更稳。",
         timestamp: new Date().toISOString(),
         suggestions: [
-          '哪里还有车位？',
-          '怎么导航过去？',
-          '为什么不是最近的？',
-          '和高德停车有什么不同？',
-          '这些数据来源是什么？',
-          '有没有更便宜的？'
+          '为什么推荐这里？',
+          '现在过去稳不稳？',
+          '为什么不是最近？',
+          '有没有更稳备选？',
+          '能不能预约支付？'
         ]
       };
       setMessages([welcomeMessage]);
@@ -143,15 +142,14 @@ const Chatbot = ({ isOpen, onClose, context = null }) => {
       const welcomeMessage = {
         id: Date.now(),
         type: 'bot',
-        content: '对话已清空。你可以继续问我余位、推荐理由、和高德的差异、收费规则或数据来源。',
+        content: '对话已清空。你可以继续问我到场保障、备选车场、导航、收费规则、缴费演示或数据来源。',
         timestamp: new Date().toISOString(),
         suggestions: [
-          '哪里还有车位？',
-          '怎么导航过去？',
           '为什么推荐这里？',
-          '和高德有什么区别？',
-          '收费规则是什么？',
-          '说明演示边界'
+          '现在过去稳不稳？',
+          '为什么不是最近？',
+          '有没有更稳备选？',
+          '能不能预约支付？'
         ]
       };
       setMessages([welcomeMessage]);
@@ -174,31 +172,31 @@ const Chatbot = ({ isOpen, onClose, context = null }) => {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="flex h-[min(620px,82svh)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl"
+          className="flex h-[min(640px,84svh)] w-full max-w-md flex-col overflow-hidden rounded-[28px] border border-emerald-100 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.22)]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-950 p-4 text-white">
+          <div className="flex items-center justify-between border-b border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-white p-4 text-zinc-950">
             <div className="flex items-center">
-              <div className="mr-3 flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-400 text-zinc-950">
+              <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-[0_12px_24px_rgba(16,185,129,0.22)]">
                 <CpuChipIcon className="h-5 w-5" />
               </div>
-              <div>
-                <h3 className="font-semibold">ParkGov Agent</h3>
-                <p className="text-xs text-zinc-300">停车服务与治理演示智能体</p>
-              </div>
+                  <div>
+                    <h3 className="font-semibold">ParkGov Agent</h3>
+                    <p className="text-xs text-zinc-500">AI 到场保障助手</p>
+                  </div>
             </div>
             <div className="flex items-center space-x-2">
               <button
                 onClick={clearChat}
-                className="rounded px-2 py-1 text-sm text-zinc-300 hover:text-white"
+                className="rounded-full border border-emerald-100 bg-white px-2.5 py-1 text-sm text-zinc-600 hover:bg-emerald-50 hover:text-emerald-800"
                 title="清空对话"
               >
                 清空
               </button>
               <button
                 onClick={onClose}
-                className="rounded p-1 text-zinc-300 hover:text-white"
+                className="rounded-full border border-zinc-200 bg-white p-1 text-zinc-500 hover:bg-zinc-50 hover:text-zinc-950"
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
@@ -206,9 +204,10 @@ const Chatbot = ({ isOpen, onClose, context = null }) => {
           </div>
 
           {context?.selectedLot && (
-            <div className="border-b border-zinc-100 bg-emerald-50 px-4 py-3 text-xs leading-5 text-emerald-900">
-              正在围绕 <span className="font-semibold">{context.selectedLot.name}</span> 解答：
-              剩余 {context.selectedLot.available} 个车位，拥挤度 {context.selectedLot.occupancy}%。
+            <div className="border-b border-emerald-100 bg-emerald-50/70 px-4 py-3 text-xs leading-5 text-emerald-950">
+              <span className="font-semibold">当前关注：</span>
+              {context.selectedLot.name} · 剩余 {context.selectedLot.available} · 拥挤度 {context.selectedLot.occupancy}%。
+              {context.selectedLot.arrivalProbability ? ` AI 预计可停 ${context.selectedLot.arrivalProbability}%。` : ''}
             </div>
           )}
 
@@ -222,10 +221,10 @@ const Chatbot = ({ isOpen, onClose, context = null }) => {
                 <div
                   className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                     message.type === 'user'
-                      ? 'bg-zinc-950 text-white'
+                      ? 'bg-emerald-600 text-white'
                       : message.isError
                       ? 'bg-red-50 text-red-700 border border-red-200'
-                      : 'bg-zinc-100 text-zinc-900'
+                      : 'bg-zinc-50 text-zinc-900 border border-zinc-100'
                   }`}
                 >
                   <div className="flex items-start">
@@ -263,7 +262,7 @@ const Chatbot = ({ isOpen, onClose, context = null }) => {
                       <CpuChipIcon className="h-3 w-3 text-emerald-700" />
                     </div>
                     <LoadingSpinner size="small" className="mr-2" />
-                    <span className="text-sm">正在研判...</span>
+                    <span className="text-sm">正在查找...</span>
                   </div>
                 </div>
               </div>
@@ -280,7 +279,7 @@ const Chatbot = ({ isOpen, onClose, context = null }) => {
                   <button
                     key={index}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-700 transition-colors hover:bg-zinc-200"
+                    className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800 transition-colors hover:bg-emerald-100"
                   >
                     {suggestion}
                   </button>
@@ -297,14 +296,14 @@ const Chatbot = ({ isOpen, onClose, context = null }) => {
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="问我余位、收费、推荐理由或数据来源..."
-                className="flex-1 form-input text-sm"
+                placeholder="问 AI 为什么推荐、稳不稳、怎么去..."
+                className="flex-1 rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100"
                 disabled={isLoading}
               />
               <button
                 type="submit"
                 disabled={!inputMessage.trim() || isLoading}
-                className="inline-flex items-center justify-center rounded-md bg-zinc-950 p-2 text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <PaperAirplaneIcon className="w-4 h-4" />
               </button>

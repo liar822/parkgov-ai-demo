@@ -25,3 +25,6 @@ datasets/samples/
 .DS_Store
 .idea/
 .vscode/
+
+# Local Netlify folder
+.netlify

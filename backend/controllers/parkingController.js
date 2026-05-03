@@ -1,5 +1,6 @@
 const ParkingLot = require('../models/ParkingLot');
 const ParkingSlot = require('../models/ParkingSlot');
+const ArrivalAssuranceService = require('../services/arrivalAssuranceService');
 const Joi = require('joi');
 
 // Validation schemas
@@ -14,7 +15,101 @@ const updateSlotSchema = Joi.object({
   predicted_vacancy_seconds: Joi.number().integer().min(0).optional()
 });
 
+const recommendationQuerySchema = Joi.object({
+  reference_lat: Joi.number().min(-90).max(90).optional(),
+  reference_lng: Joi.number().min(-180).max(180).optional(),
+  limit: Joi.number().integer().min(1).max(50).optional()
+});
+
+const arrivalIntentSchema = Joi.object({
+  lot_id: Joi.number().integer().positive().required(),
+  estimated_arrival_minutes: Joi.number().integer().min(1).max(240).optional(),
+  expected_duration_minutes: Joi.number().integer().min(15).max(1440).optional(),
+  reference_lat: Joi.number().min(-90).max(90).optional(),
+  reference_lng: Joi.number().min(-180).max(180).optional(),
+  created_from: Joi.string().max(80).optional()
+});
+
 class ParkingController {
+  // Get arrival assurance recommendations for the parking service frontend
+  static async getRecommendations(req, res) {
+    try {
+      const { error, value } = recommendationQuerySchema.validate(req.query);
+      if (error) {
+        return res.status(400).json({
+          error: 'Validation error',
+          details: error.details[0].message
+        });
+      }
+
+      const data = await ArrivalAssuranceService.getRecommendations(value);
+
+      res.json({
+        success: true,
+        data
+      });
+    } catch (error) {
+      console.error('Error getting arrival assurance recommendations:', error);
+      res.status(500).json({
+        error: 'Failed to get parking recommendations',
+        message: error.message
+      });
+    }
+  }
+
+  // Create a demo arrival intent without reserving or occupying a real slot
+  static async createArrivalIntent(req, res) {
+    try {
+      const { error, value } = arrivalIntentSchema.validate(req.body);
+      if (error) {
+        return res.status(400).json({
+          error: 'Validation error',
+          details: error.details[0].message
+        });
+      }
+
+      const data = await ArrivalAssuranceService.createArrivalIntent(value);
+
+      res.status(201).json({
+        success: true,
+        message: 'Arrival intent created for demo assurance flow',
+        data
+      });
+    } catch (error) {
+      console.error('Error creating arrival intent:', error);
+      res.status(error.statusCode || 500).json({
+        error: error.statusCode === 404 ? 'Parking lot not found' : 'Failed to create arrival intent',
+        message: error.message
+      });
+    }
+  }
+
+  // Get a demo arrival intent by display code for user-side receipt validation
+  static async getArrivalIntent(req, res) {
+    try {
+      const displayCode = String(req.params.displayCode || '').trim();
+      if (!displayCode || displayCode.length > 80) {
+        return res.status(400).json({
+          error: 'Validation error',
+          details: 'Invalid arrival intent code'
+        });
+      }
+
+      const data = await ArrivalAssuranceService.getArrivalIntentByCode(displayCode);
+
+      res.json({
+        success: true,
+        data
+      });
+    } catch (error) {
+      console.error('Error getting arrival intent:', error);
+      res.status(error.statusCode || 500).json({
+        error: error.statusCode === 404 ? 'Arrival intent not found' : 'Failed to get arrival intent',
+        message: error.message
+      });
+    }
+  }
+
   // Get parking lot status with all slots
   static async getParkingStatus(req, res) {
     try {
